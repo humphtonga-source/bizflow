@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>BizFlow Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:  #0A0A0A;
+  --black2: #111111;
+  --black3: #1A1A1A;
+  --gold:   #C9A84C;
+  --gold2:  #E8C56A;
+  --goldl:  rgba(201,168,76,0.1);
+  --white:  #FAFAFA;
+  --white2: #E8E8E8;
+  --muted:  #888888;
+  --green:  #22C55E;
+  --greenl: rgba(34,197,94,0.1);
+  --red:    #EF4444;
+  --redl:   rgba(239,68,68,0.1);
+  --blue:   #3B82F6;
+  --bluel:  rgba(59,130,246,0.1);
+  --border: rgba(201,168,76,0.15);
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--black);
+  color: var(--white);
+  min-height: 100vh;
+}
+
+/* ── LOADING ── */
+#loading {
+  position: fixed; inset: 0;
+  background: var(--black);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 1000; gap: 16px;
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(201,168,76,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── HEADER ── */
+.header {
+  background: var(--black2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+
+.header-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.header-logo span { color: var(--gold); }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-biz {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: right;
+}
+.header-biz strong { color: var(--white); display: block; font-size: 14px; }
+
+.btn-signout {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+}
+.btn-signout:hover { border-color: var(--red); color: var(--red); }
+
+/* ── TRIAL BANNER ── */
+.trial-banner {
+  background: var(--goldl);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  font-size: 13px;
+  color: var(--gold);
+  text-align: center;
+  display: none;
+}
+
+/* ── NAV ── */
+.nav {
+  display: flex;
+  background: var(--black2);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav::-webkit-scrollbar { display: none; }
+
+.nav-btn {
+  flex: 0 0 auto;
+  padding: 14px 18px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.nav-btn:hover { color: var(--white2); }
+
+/* ── CONTENT ── */
+.content {
+  padding: 20px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--black2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+}
+
+/* ── STAT GRID ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  background: var(--black2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.stat-value { font-size: 24px; font-weight: 800; color: var(--gold); margin-top: 4px; }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── INPUT ── */
+.input {
+  width: 100%;
+  background: var(--black3);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.2s;
+  margin-bottom: 12px;
+}
+.input:focus { border-color: var(--gold); }
+.input::placeholder { color: var(--muted); }
+
+select.input { cursor: pointer; }
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-gold { background: var(--gold); color: var(--black); }
+.btn-gold:hover { background: var(--gold2); }
+.btn-full { width: 100%; padding: 14px; font-size: 15px; }
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+.btn-red { background: var(--redl); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+.btn-green { background: var(--greenl); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+.btn-sm { padding: 7px 14px; font-size: 12px; }
+
+/* ── LIST ITEMS ── */
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--black3);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+.list-item-name { font-size: 14px; font-weight: 600; }
+.list-item-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.list-item-value { font-size: 15px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+
+/* ── BADGE ── */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-gold { background: var(--goldl); color: var(--gold); }
+.badge-green { background: var(--greenl); color: var(--green); }
+.badge-red { background: var(--redl); color: var(--red); }
+.badge-blue { background: var(--bluel); color: var(--blue); }
+
+/* ── SECTION ── */
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+}
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-text { font-size: 14px; }
+
+/* ── CHAT ── */
+.chat-messages {
+  height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--black3);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  scrollbar-width: thin;
+}
+.chat-msg {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.chat-msg.mine {
+  background: var(--goldl);
+  border: 1px solid var(--border);
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+.chat-msg.theirs {
+  background: var(--black2);
+  border: 1px solid rgba(255,255,255,0.06);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+.chat-msg-author { font-size: 11px; color: var(--gold); font-weight: 600; margin-bottom: 4px; }
+.chat-msg-time { font-size: 10px; color: var(--muted); margin-top: 4px; text-align: right; }
+.chat-input-row { display: flex; gap: 10px; }
+.chat-input-row .input { margin-bottom: 0; flex: 1; }
+
+/* ── STAFF ── */
+.staff-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: var(--black3);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.staff-avatar {
+  width: 44px; height: 44px;
+  background: var(--goldl);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+.staff-name { font-size: 15px; font-weight: 600; }
+.staff-role { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.staff-actions { margin-left: auto; display: flex; gap: 8px; }
+
+/* ── PROGRESS ── */
+.progress-wrap { background: var(--black3); border-radius: 999px; height: 8px; overflow: hidden; margin: 6px 0; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 999px; transition: width 0.5s; }
+
+label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
+.row { display: flex; gap: 10px; align-items: center; }
+.flex-1 { flex: 1; }
+hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--muted);">Loading BizFlow...</div>
+</div>
+
+<!-- TRIAL BANNER -->
+<div class="trial-banner" id="trial-banner"></div>
+
+<!-- HEADER -->
+<div class="header" id="header" style="display:none;">
+  <div class="header-logo">🏢 Biz<span>Flow</span></div>
+  <div class="header-right">
+    <div class="header-biz">
+      <strong id="hdr-bizname">-</strong>
+      <span id="hdr-biztype">-</span>
+    </div>
+    <button class="btn-signout" onclick="signOut()">Sign out</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav" id="nav" style="display:none;" id="main-nav"></div>
+
+<!-- CONTENT -->
+<div class="content" id="main-content" style="display:none;">
+
+  <!-- ── DASHBOARD ── -->
+  <div class="section active" id="sec-dashboard">
+    <div class="stat-grid" id="dash-stats"></div>
+    <div class="card" id="dash-welcome"></div>
+    <div class="card" id="dash-quick-actions"></div>
+  </div>
+
+  <!-- ── FINANCE ── -->
+  <div class="section" id="sec-finance">
+    <div class="card">
+      <div class="card-title" id="fin-title">Daily Finance</div>
+      <div id="fin-content"></div>
+    </div>
+  </div>
+
+  <!-- ── STAFF ── -->
+  <div class="section" id="sec-staff">
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;">
+      <div>
+        <div style="font-size:16px;font-weight:700;">Staff</div>
+        <div style="font-size:12px;color:var(--muted);" id="staff-count">0 members</div>
+      </div>
+      <button class="btn btn-gold btn-sm" onclick="showAddStaff()">+ Add Staff</button>
+    </div>
+    <div id="add-staff-form" style="display:none;">
+      <div class="card">
+        <div class="card-title">Add Staff Member</div>
+        <label>Full Name</label>
+        <input class="input" id="st-name" placeholder="e.g. Mary Wanjiku">
+        <label>Role</label>
+        <select class="input" id="st-role"></select>
+        <label>Phone Number</label>
+        <input class="input" id="st-phone" placeholder="e.g. 0712 345 678" type="tel">
+        <div class="row">
+          <button class="btn btn-gold flex-1" onclick="addStaff()">Save</button>
+          <button class="btn btn-outline" onclick="hideAddStaff()">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div id="staff-list"></div>
+  </div>
+
+  <!-- ── PLANNING ── -->
+  <div class="section" id="sec-planning">
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;">
+      <div style="font-size:16px;font-weight:700;">Tasks & Schedule</div>
+      <button class="btn btn-gold btn-sm" onclick="showAddTask()">+ Add Task</button>
+    </div>
+    <div id="add-task-form" style="display:none;">
+      <div class="card">
+        <div class="card-title">New Task</div>
+        <input class="input" id="t-name" placeholder="Task description">
+        <input class="input" id="t-assignee" placeholder="Assign to (optional)">
+        <input class="input" id="t-due" type="date">
+        <div class="row">
+          <button class="btn btn-gold flex-1" onclick="addTask()">Save</button>
+          <button class="btn btn-outline" onclick="hideAddTask()">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div id="task-list"></div>
+  </div>
+
+  <!-- ── CHAT ── -->
+  <div class="section" id="sec-chat">
+    <div class="card">
+      <div class="card-title">Team Chat</div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="empty">
+          <div class="empty-icon">💬</div>
+          <div class="empty-text">No messages yet. Say hello to your team!</div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input class="input" id="chat-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMessage()">
+        <button class="btn btn-gold" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ANALYTICS ── -->
+  <div class="section" id="sec-analytics">
+    <div class="card">
+      <div class="card-title">Analytics</div>
+      <div id="analytics-content">
+        <div class="empty">
+          <div class="empty-icon">📊</div>
+          <div class="empty-text">Analytics will appear here as you record daily data.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS ── -->
+  <div class="section" id="sec-settings">
+    <div class="card">
+      <div class="card-title">Business Settings</div>
+      <label>Business Name</label>
+      <input class="input" id="set-bizname" placeholder="Business name">
+      <label>Location</label>
+      <input class="input" id="set-location" placeholder="Town / Location">
+      <label>Business Phone</label>
+      <input class="input" id="set-phone" placeholder="Phone number" type="tel">
+      <button class="btn btn-gold btn-full" onclick="saveSettings()">Save Changes</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Subscription</div>
+      <div id="sub-info"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Danger Zone</div>
+      <button class="btn btn-red btn-full" onclick="signOut()">Sign Out</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://geqhizgmxfnhdfqxhhll.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlcWhpemdteGZuaGRmcXhoaGxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNDg3MDQsImV4cCI6MjA5NTkyNDcwNH0.gOBrJ5odMix65N5PbG7fJzbPzJUkgGHuFRp1cTbHpWI';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── CONFIG PER BUSINESS TYPE ──
+const BIZ_CONFIG = {
+  'Salon & Beauty': {
+    icon: '💇',
+    color: '#EC4899',
+    tabs: ['dashboard','finance','staff','planning','chat','analytics','settings'],
+    tabLabels: { dashboard:'🏠 Home', finance:'💰 Revenue', staff:'👥 Stylists', planning:'📅 Appointments', chat:'💬 Chat', analytics:'📊 Analytics', settings:'⚙️ Settings' },
+    staffRoles: ['Stylist','Receptionist','Manager','Cleaner'],
+    financeFields: [
+      { id:'daily_revenue', label:'Today\'s Revenue (KES)', type:'number' },
+      { id:'services_count', label:'Number of Services', type:'number' },
+      { id:'products_sold', label:'Products Sold (KES)', type:'number' },
+      { id:'expenses', label:'Expenses (KES)', type:'number' },
+    ],
+    dashStats: ['Today\'s Revenue','Services Today','Active Stylists','This Month'],
+    quickActions: ['Record Revenue','Add Appointment','Add Stylist','View Reports']
+  },
+  'Restaurant & Café': {
+    icon: '🍽️',
+    color: '#F97316',
+    tabs: ['dashboard','finance','staff','planning','chat','analytics','settings'],
+    tabLabels: { dashboard:'🏠 Home', finance:'💰 Revenue', staff:'👥 Staff', planning:'📅 Reservations', chat:'💬 Chat', analytics:'📊 Analytics', settings:'⚙️ Settings' },
+    staffRoles: ['Waiter','Chef','Cashier','Manager','Cleaner'],
+    financeFields: [
+      { id:'daily_revenue', label:'Today\'s Revenue (KES)', type:'number' },
+      { id:'covers', label:'Number of Covers', type:'number' },
+      { id:'expenses', label:'Expenses (KES)', type:'number' },
+      { id:'notes', label:'Notes', type:'text' },
+    ],
+    dashStats: ['Today\'s Revenue','Covers Today','Active Staff','This Month'],
+    quickActions: ['Record Revenue','Add Reservation','Add Staff','View Reports']
+  },
+  'Law Firm': {
+    icon: '⚖️',
+    color: '#6366F1',
+    tabs: ['dashboard','finance','staff','planning','chat','analytics','settings'],
+    tabLabels: { dashboard:'🏠 Home', finance:'💼 Billing', staff:'👥 Team', planning:'📅 Cases', chat:'💬 Chat', analytics:'📊 Analytics', settings:'⚙️ Settings' },
+    staffRoles: ['Partner','Associate','Paralegal','Secretary','Intern'],
+    financeFields: [
+      { id:'daily_revenue', label:'Billable Amount (KES)', type:'number' },
+      { id:'hours', label:'Billable Hours', type:'number' },
+      { id:'expenses', label:'Expenses (KES)', type:'number' },
+      { id:'notes', label:'Case Notes', type:'text' },
+    ],
+    dashStats: ['This Month\'s Billing','Billable Hours','Active Cases','Active Staff'],
+    quickActions: ['Record Billing','Add Case','Add Staff','View Reports']
+  },
+  'Bookshop & Retail': {
+    icon: '📚',
+    color: '#10B981',
+    tabs: ['dashboard','finance','staff','planning','chat','analytics','settings'],
+    tabLabels: { dashboard:'🏠 Home', finance:'💰 Sales', staff:'👥 Staff', planning:'📦 Stock', chat:'💬 Chat', analytics:'📊 Analytics', settings:'⚙️ Settings' },
+    staffRoles: ['Cashier','Sales Assistant','Manager','Stock Controller'],
+    financeFields: [
+      { id:'daily_revenue', label:'Today\'s Sales (KES)', type:'number' },
+      { id:'items_sold', label:'Items Sold', type:'number' },
+      { id:'expenses', label:'Expenses (KES)', type:'number' },
+      { id:'notes', label:'Notes', type:'text' },
+    ],
+    dashStats: ['Today\'s Sales','Items Sold','Active Staff','This Month'],
+    quickActions: ['Record Sales','Add Stock Item','Add Staff','View Reports']
+  },
+  'Betting Shop': {
+    icon: '🎯',
+    color: '#C9A84C',
+    tabs: ['dashboard','finance','staff','planning','chat','analytics','settings'],
+    tabLabels: { dashboard:'🏠 Home', finance:'💰 Finance', staff:'👥 Staff', planning:'📅 Planning', chat:'💬 Chat', analytics:'📊 Analytics', settings:'⚙️ Settings' },
+    staffRoles: ['Cashier','Manager','Supervisor'],
+    financeFields: [
+      { id:'daily_revenue', label:'Daily Revenue (KES)', type:'number' },
+      { id:'opening_cash', label:'Opening Cash (KES)', type:'number' },
+      { id:'expenses', label:'Expenses (KES)', type:'number' },
+      { id:'notes', label:'Notes', type:'text' },
+    ],
+    dashStats: ['Today\'s Revenue','Opening Cash','Active Staff','This Month'],
+    quickActions: ['Record Revenue','Add Staff','View Reports','Settings']
+  },
+  'Other': {
+    icon: '🏢',
+    color: '#C9A84C',
+    tabs: ['dashboard','finance','staff','planning','chat','analytics','settings'],
+    tabLabels: { dashboard:'🏠 Home', finance:'💰 Finance', staff:'👥 Staff', planning:'📅 Planning', chat:'💬 Chat', analytics:'📊 Analytics', settings:'⚙️ Settings' },
+    staffRoles: ['Staff','Manager','Supervisor','Admin'],
+    financeFields: [
+      { id:'daily_revenue', label:'Daily Revenue (KES)', type:'number' },
+      { id:'expenses', label:'Expenses (KES)', type:'number' },
+      { id:'notes', label:'Notes', type:'text' },
+    ],
+    dashStats: ['Today\'s Revenue','Expenses','Active Staff','This Month'],
+    quickActions: ['Record Revenue','Add Staff','View Reports','Settings']
+  }
+};
+
+// ── STATE ──
+let S = { user: null, business: null, staff: [], tasks: [], messages: [], finance: [], config: null };
+
+// ── INIT ──
+window.addEventListener('load', async () => {
+  // Wait for auth to be ready
+  const { data: { session } } = await db.auth.getSession();
+
+  if (!session) {
+    // Try once more after a short delay
+    await new Promise(r => setTimeout(r, 1000));
+    const { data: { session: session2 } } = await db.auth.getSession();
+    if (!session2) { window.location.href = 'app.html'; return; }
+    S.user = session2.user;
+  } else {
+    S.user = session.user;
+  }
+
+  // Load business
+  const { data: biz, error: bizErr } = await db.from('businesses').select('*').eq('owner_id', S.user.id).single();
+  if (!biz || bizErr) { window.location.href = 'app.html'; return; }
+
+  S.business = biz;
+  S.config = BIZ_CONFIG[biz.type] || BIZ_CONFIG['Other'];
+
+  // Show trial banner
+  const trialEnds = new Date(biz.trial_ends_at);
+  const daysLeft = Math.ceil((trialEnds - new Date()) / (1000 * 60 * 60 * 24));
+  if (daysLeft > 0 && biz.plan !== 'paid') {
+    const banner = document.getElementById('trial-banner');
+    banner.style.display = 'block';
+    banner.textContent = `🎉 Free trial: ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining — Subscribe to keep access`;
+  }
+
+  // Build UI
+  buildNav();
+  buildDashboard();
+  await loadStaff();
+  await loadTasks();
+  await loadFinance();
+  loadSettings();
+
+  // Show app
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('header').style.display = 'flex';
+  document.getElementById('nav').style.display = 'flex';
+  document.getElementById('main-content').style.display = 'block';
+
+  document.getElementById('hdr-bizname').textContent = biz.name;
+  document.getElementById('hdr-biztype').textContent = S.config.icon + ' ' + biz.type;
+
+  // Realtime chat
+  db.channel('chat_' + biz.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bizflow_messages', filter: 'business_id=eq.' + biz.id }, payload => {
+      S.messages.push(payload.new);
+      renderChat();
+    }).subscribe();
+});
+
+// ── BUILD NAV ──
+function buildNav() {
+  const nav = document.getElementById('nav');
+  nav.innerHTML = S.config.tabs.map((tab, i) =>
+    `<button class="nav-btn ${i===0?'active':''}" onclick="goTab('${tab}', this)">${S.config.tabLabels[tab]}</button>`
+  ).join('');
+}
+
+// ── NAVIGATION ──
+function goTab(tab, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const sec = document.getElementById('sec-' + tab);
+  if (sec) sec.classList.add('active');
+  if (btn) btn.classList.add('active');
+  else document.querySelector(`[onclick*="'${tab}'"]`)?.classList.add('active');
+}
+
+// ── DASHBOARD ──
+function buildDashboard() {
+  const cfg = S.config;
+  const biz = S.business;
+
+  // Stats
+  const todayRevenue = S.finance.find(f => f.date === today())?.daily_revenue || 0;
+  const monthRevenue = S.finance.filter(f => f.date?.startsWith(new Date().toISOString().slice(0,7))).reduce((s,f) => s + (f.daily_revenue||0), 0);
+
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">${cfg.dashStats[0]}</div>
+      <div class="stat-value">KES ${fmt(todayRevenue)}</div>
+      <div class="stat-sub">Today</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">${cfg.dashStats[3]}</div>
+      <div class="stat-value">KES ${fmt(monthRevenue)}</div>
+      <div class="stat-sub">${new Date().toLocaleDateString('en-KE',{month:'long'})}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Staff</div>
+      <div class="stat-value">${S.staff.length}</div>
+      <div class="stat-sub">Active members</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Tasks</div>
+      <div class="stat-value">${S.tasks.filter(t=>!t.done).length}</div>
+      <div class="stat-sub">Pending</div>
+    </div>
+  `;
+
+  // Welcome
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const ownerName = S.user.user_metadata?.full_name?.split(' ')[0] || 'there';
+  document.getElementById('dash-welcome').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="font-size:40px;">${cfg.icon}</div>
+      <div>
+        <div style="font-size:18px;font-weight:700;">${greeting}, ${ownerName}! 👋</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px;">${biz.name} · ${biz.location} · ${new Date().toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long'})}</div>
+      </div>
+    </div>
+  `;
+
+  // Quick actions
+  document.getElementById('dash-quick-actions').innerHTML = `
+    <div class="card-title">Quick Actions</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button class="btn btn-gold" onclick="goTab('finance')" style="padding:12px;">💰 Record Revenue</button>
+      <button class="btn btn-outline" onclick="goTab('staff')" style="padding:12px;">👥 Manage Staff</button>
+      <button class="btn btn-outline" onclick="goTab('planning')" style="padding:12px;">📅 Add Task</button>
+      <button class="btn btn-outline" onclick="goTab('chat')" style="padding:12px;">💬 Team Chat</button>
+    </div>
+  `;
+}
+
+// ── FINANCE ──
+async function loadFinance() {
+  const { data } = await db.from('bizflow_finance').select('*').eq('business_id', S.business.id).order('date', { ascending: false }).limit(30);
+  S.finance = data || [];
+  renderFinance();
+}
+
+function renderFinance() {
+  const cfg = S.config;
+  const todayRecord = S.finance.find(f => f.date === today());
+
+  let html = `<div class="card-title" style="margin-bottom:16px;">📅 ${new Date().toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long'})}</div>`;
+
+  cfg.financeFields.forEach(field => {
+    html += `<label>${field.label}</label>
+    <input class="input" id="fin-${field.id}" type="${field.type}" placeholder="0" value="${todayRecord?.[field.id]||''}">`;
+  });
+
+  html += `<button class="btn btn-gold btn-full" onclick="saveFinance()" style="margin-top:4px;">Save Today's Record</button>`;
+
+  if (S.finance.length > 0) {
+    html += `<hr><div class="card-title" style="margin-top:4px;">Recent Records</div>`;
+    S.finance.slice(0, 7).forEach(f => {
+      html += `
+      <div class="list-item">
+        <div>
+          <div class="list-item-name">${new Date(f.date).toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short'})}</div>
+          <div class="list-item-sub">${f.notes || ''}</div>
+        </div>
+        <div class="list-item-value">KES ${fmt(f.daily_revenue||0)}</div>
+      </div>`;
+    });
+  }
+
+  document.getElementById('fin-content').innerHTML = html;
+}
+
+async function saveFinance() {
+  const record = { business_id: S.business.id, date: today() };
+  S.config.financeFields.forEach(f => {
+    const el = document.getElementById('fin-' + f.id);
+    record[f.id] = f.type === 'number' ? parseFloat(el?.value) || 0 : el?.value || '';
+  });
+
+  const existing = S.finance.find(f => f.date === today());
+  let error;
+
+  if (existing) {
+    ({ error } = await db.from('bizflow_finance').update(record).eq('id', existing.id));
+  } else {
+    ({ error } = await db.from('bizflow_finance').insert(record));
+  }
+
+  if (error) { alert('Failed to save: ' + error.message); return; }
+
+  await loadFinance();
+  buildDashboard();
+  alert('✅ Record saved!');
+}
+
+// ── STAFF ──
+async function loadStaff() {
+  const { data } = await db.from('bizflow_staff').select('*').eq('business_id', S.business.id);
+  S.staff = data || [];
+  renderStaff();
+}
+
+function renderStaff() {
+  document.getElementById('staff-count').textContent = S.staff.length + ' member' + (S.staff.length !== 1 ? 's' : '');
+
+  // Populate roles dropdown
+  const roleSelect = document.getElementById('st-role');
+  if (roleSelect && !roleSelect.options.length) {
+    S.config.staffRoles.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r; opt.textContent = r;
+      roleSelect.appendChild(opt);
+    });
+  }
+
+  const list = document.getElementById('staff-list');
+  if (!S.staff.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">No staff yet. Add your first team member!</div></div>`;
+    return;
+  }
+
+  list.innerHTML = S.staff.map(s => `
+    <div class="staff-card">
+      <div class="staff-avatar">${s.name.charAt(0).toUpperCase()}</div>
+      <div>
+        <div class="staff-name">${s.name}</div>
+        <div class="staff-role">${s.role} ${s.phone ? '· ' + s.phone : ''}</div>
+      </div>
+      <div class="staff-actions">
+        <button class="btn btn-red btn-sm" onclick="removeStaff('${s.id}')">Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showAddStaff() { document.getElementById('add-staff-form').style.display = 'block'; }
+function hideAddStaff() { document.getElementById('add-staff-form').style.display = 'none'; }
+
+async function addStaff() {
+  const name = document.getElementById('st-name').value.trim();
+  const role = document.getElementById('st-role').value;
+  const phone = document.getElementById('st-phone').value.trim();
+  if (!name) { alert('Please enter staff name'); return; }
+
+  const { error } = await db.from('bizflow_staff').insert({ business_id: S.business.id, name, role, phone });
+  if (error) { alert('Failed: ' + error.message); return; }
+
+  document.getElementById('st-name').value = '';
+  document.getElementById('st-phone').value = '';
+  hideAddStaff();
+  await loadStaff();
+}
+
+async function removeStaff(id) {
+  if (!confirm('Remove this staff member?')) return;
+  await db.from('bizflow_staff').delete().eq('id', id);
+  await loadStaff();
+}
+
+// ── TASKS ──
+async function loadTasks() {
+  const { data } = await db.from('bizflow_tasks').select('*').eq('business_id', S.business.id).order('created_at', { ascending: false });
+  S.tasks = data || [];
+  renderTasks();
+}
+
+function renderTasks() {
+  const list = document.getElementById('task-list');
+  if (!S.tasks.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No tasks yet.</div></div>`;
+    return;
+  }
+  const today_str = today();
+  list.innerHTML = S.tasks.map(t => {
+    const overdue = t.due_date && t.due_date < today_str && !t.done;
+    return `
+    <div class="list-item" style="border-left:3px solid ${t.done ? 'var(--green)' : overdue ? 'var(--red)' : 'var(--gold)'};">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;">
+        <div onclick="toggleTask('${t.id}',${t.done})" style="width:22px;height:22px;border-radius:6px;border:2px solid ${t.done?'var(--green)':'var(--muted)'};background:${t.done?'var(--green)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+          ${t.done ? '✓' : ''}
+        </div>
+        <div>
+          <div style="font-size:14px;font-weight:600;${t.done?'text-decoration:line-through;color:var(--muted);':''}">${t.name}</div>
+          <div style="font-size:12px;color:var(--muted);">${t.assignee ? '👤 ' + t.assignee : ''} ${t.due_date ? '· 📅 ' + t.due_date : ''} ${overdue ? '<span class="badge badge-red">Overdue</span>' : ''}</div>
+        </div>
+      </div>
+      <button class="btn btn-red btn-sm" onclick="deleteTask('${t.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function showAddTask() { document.getElementById('add-task-form').style.display = 'block'; }
+function hideAddTask() { document.getElementById('add-task-form').style.display = 'none'; }
+
+async function addTask() {
+  const name = document.getElementById('t-name').value.trim();
+  if (!name) { alert('Please enter task name'); return; }
+  const { error } = await db.from('bizflow_tasks').insert({
+    business_id: S.business.id,
+    name,
+    assignee: document.getElementById('t-assignee').value.trim(),
+    due_date: document.getElementById('t-due').value || null,
+    done: false
+  });
+  if (error) { alert('Failed: ' + error.message); return; }
+  document.getElementById('t-name').value = '';
+  document.getElementById('t-assignee').value = '';
+  document.getElementById('t-due').value = '';
+  hideAddTask();
+  await loadTasks();
+}
+
+async function toggleTask(id, done) {
+  await db.from('bizflow_tasks').update({ done: !done }).eq('id', id);
+  await loadTasks();
+}
+
+async function deleteTask(id) {
+  await db.from('bizflow_tasks').delete().eq('id', id);
+  await loadTasks();
+}
+
+// ── CHAT ──
+async function loadChat() {
+  const { data } = await db.from('bizflow_messages').select('*').eq('business_id', S.business.id).order('created_at', { ascending: true }).limit(50);
+  S.messages = data || [];
+  renderChat();
+}
+
+function renderChat() {
+  const el = document.getElementById('chat-messages');
+  if (!S.messages.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">💬</div><div class="empty-text">No messages yet.</div></div>`;
+    return;
+  }
+  const userName = S.user.user_metadata?.full_name || 'You';
+  el.innerHTML = S.messages.map(m => `
+    <div class="chat-msg ${m.author === userName ? 'mine' : 'theirs'}">
+      ${m.author !== userName ? `<div class="chat-msg-author">${m.author}</div>` : ''}
+      ${m.text}
+      <div class="chat-msg-time">${new Date(m.created_at).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'})}</div>
+    </div>
+  `).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const author = S.user.user_metadata?.full_name || 'Owner';
+  await db.from('bizflow_messages').insert({ business_id: S.business.id, author, text });
+  input.value = '';
+  await loadChat();
+}
+
+// ── SETTINGS ──
+function loadSettings() {
+  document.getElementById('set-bizname').value = S.business.name || '';
+  document.getElementById('set-location').value = S.business.location || '';
+  document.getElementById('set-phone').value = S.business.phone || '';
+
+  const trialEnds = new Date(S.business.trial_ends_at);
+  const daysLeft = Math.ceil((trialEnds - new Date()) / (1000 * 60 * 60 * 24));
+  document.getElementById('sub-info').innerHTML = `
+    <div class="list-item">
+      <div><div class="list-item-name">Current Plan</div><div class="list-item-sub">${S.business.plan}</div></div>
+      <div class="badge badge-gold">${S.business.plan}</div>
+    </div>
+    <div class="list-item">
+      <div><div class="list-item-name">Trial Status</div></div>
+      <div class="badge ${daysLeft > 0 ? 'badge-green' : 'badge-red'}">${daysLeft > 0 ? daysLeft + ' days left' : 'Expired'}</div>
+    </div>
+  `;
+}
+
+async function saveSettings() {
+  const { error } = await db.from('businesses').update({
+    name: document.getElementById('set-bizname').value.trim(),
+    location: document.getElementById('set-location').value.trim(),
+    phone: document.getElementById('set-phone').value.trim()
+  }).eq('id', S.business.id);
+
+  if (error) { alert('Failed: ' + error.message); return; }
+  alert('✅ Settings saved!');
+  document.getElementById('hdr-bizname').textContent = document.getElementById('set-bizname').value.trim();
+}
+
+// ── SIGN OUT ──
+async function signOut() {
+  await db.auth.signOut();
+  window.location.href = 'app.html';
+}
+
+// ── UTILS ──
+function fmt(v) { return Math.round(v).toLocaleString('en-KE'); }
+function today() { return new Date().toISOString().split('T')[0]; }
+</script>
+</body>
+</html>
