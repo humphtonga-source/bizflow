@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>BizFlow — Sign In</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:  #0A0A0A;
+  --black2: #111111;
+  --black3: #1A1A1A;
+  --gold:   #C9A84C;
+  --gold2:  #E8C56A;
+  --white:  #FAFAFA;
+  --white2: #E8E8E8;
+  --muted:  #888888;
+  --green:  #22C55E;
+  --red:    #EF4444;
+  --border: rgba(201,168,76,0.2);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--black);
+  color: var(--white);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* ── BACKGROUND ── */
+.bg-glow {
+  position: fixed;
+  top: -200px; left: 50%;
+  transform: translateX(-50%);
+  width: 800px; height: 800px;
+  background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; width: 100%; max-width: 440px; }
+.screen.active { display: block; animation: fadeUp 0.4s ease; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── LOGO ── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 40px;
+  justify-content: center;
+}
+
+.logo-icon {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.logo-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 700;
+}
+.logo-text span { color: var(--gold); }
+
+/* ── CARD ── */
+.card {
+  background: var(--black2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 32px;
+}
+
+.card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.card-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+/* ── INPUTS ── */
+.field { margin-bottom: 16px; }
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--white2);
+  margin-bottom: 8px;
+}
+
+.input {
+  width: 100%;
+  background: var(--black3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.2s;
+}
+.input:focus { border-color: var(--gold); }
+.input::placeholder { color: var(--muted); }
+
+.input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.input-prefix {
+  background: var(--black3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: var(--muted);
+  font-size: 15px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.btn-gold {
+  background: var(--gold);
+  color: var(--black);
+}
+.btn-gold:hover { background: var(--gold2); transform: translateY(-1px); }
+.btn-gold:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--white);
+  margin-top: 12px;
+}
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── DIVIDER ── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── LINK ── */
+.link-row {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.link-row a {
+  color: var(--gold);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* ── OTP ── */
+.otp-wrap {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.otp-input {
+  width: 50px;
+  height: 56px;
+  background: var(--black3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--white);
+  outline: none;
+  transition: border 0.2s;
+}
+.otp-input:focus { border-color: var(--gold); }
+
+/* ── BUSINESS TYPE GRID ── */
+.biz-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.biz-type-card {
+  background: var(--black3);
+  border: 2px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.biz-type-card:hover {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.05);
+}
+
+.biz-type-card.selected {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.1);
+}
+
+.biz-type-icon { font-size: 28px; margin-bottom: 8px; }
+.biz-type-name { font-size: 13px; font-weight: 600; }
+
+/* ── PLAN CARDS ── */
+.plan-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.plan-card {
+  background: var(--black3);
+  border: 2px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.plan-card:hover { border-color: var(--gold); }
+.plan-card.selected { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+.plan-card.featured { border-color: rgba(201,168,76,0.4); }
+
+.plan-name { font-size: 15px; font-weight: 700; }
+.plan-price { font-size: 18px; font-weight: 800; color: var(--gold); }
+.plan-price span { font-size: 12px; color: var(--muted); font-weight: 400; }
+.plan-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.plan-badge {
+  background: var(--gold);
+  color: var(--black);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+/* ── STEPS ── */
+.steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.step {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  transition: all 0.3s;
+}
+.step.active { background: var(--gold); width: 24px; border-radius: 4px; }
+.step.done { background: var(--green); }
+
+/* ── ERROR/SUCCESS ── */
+.msg {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: none;
+}
+.msg.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #FCA5A5; display: block; }
+.msg.success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #86EFAC; display: block; }
+
+/* ── LOADING ── */
+.loading {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+.loading.show { display: flex; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(201,168,76,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: var(--muted); }
+
+/* ── TRIAL BANNER ── */
+.trial-banner {
+  background: rgba(201,168,76,0.1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--gold);
+  text-align: center;
+  margin-bottom: 20px;
+}
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<!-- LOADING -->
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Please wait...</div>
+</div>
+
+<!-- ── SCREEN 1: WELCOME ── -->
+<div class="screen active" id="screen-welcome">
+  <div class="logo">
+    <div class="logo-icon">🏢</div>
+    <div class="logo-text">Biz<span>Flow</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Welcome back</div>
+    <p class="card-sub">Sign in to your BizFlow account or create a new one.</p>
+
+    <div id="welcome-msg" class="msg"></div>
+
+    <div class="field">
+      <label>Phone Number or Email</label>
+      <input class="input" id="w-contact" type="text" placeholder="0712 345 678 or email@example.com" autocomplete="off">
+    </div>
+
+    <button class="btn btn-gold" onclick="handleContact()">Continue →</button>
+    <button class="btn btn-outline" onclick="goScreen('screen-signup')">Create New Account</button>
+
+    <div class="link-row" style="margin-top:24px;">
+      <a href="index.html">← Back to BizFlow.com</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCREEN 2: PASSWORD LOGIN ── -->
+<div class="screen" id="screen-login">
+  <div class="logo">
+    <div class="logo-icon">🏢</div>
+    <div class="logo-text">Biz<span>Flow</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Sign in</div>
+    <p class="card-sub" id="login-sub">Enter your password to continue.</p>
+
+    <div id="login-msg" class="msg"></div>
+
+    <div class="field">
+      <label>Password</label>
+      <input class="input" id="l-password" type="password" placeholder="Your password" autocomplete="current-password">
+    </div>
+
+    <button class="btn btn-gold" onclick="handleLogin()">Sign In →</button>
+    <button class="btn btn-outline" onclick="handleForgotPassword()">Forgot Password?</button>
+    <button class="btn btn-outline" onclick="goScreen('screen-welcome')">← Back</button>
+  </div>
+</div>
+
+<!-- ── SCREEN 3: SIGN UP ── -->
+<div class="screen" id="screen-signup">
+  <div class="logo">
+    <div class="logo-icon">🏢</div>
+    <div class="logo-text">Biz<span>Flow</span></div>
+  </div>
+  <div class="card">
+    <div class="trial-banner">🎉 14-day free trial — no credit card required</div>
+    <div class="card-title">Create account</div>
+    <p class="card-sub">Sign up with your phone number or email address.</p>
+
+    <div id="signup-msg" class="msg"></div>
+
+    <div class="field">
+      <label>Full Name</label>
+      <input class="input" id="s-name" type="text" placeholder="e.g. John Kamau">
+    </div>
+
+    <div class="field">
+      <label>Phone Number</label>
+      <div class="input-group">
+        <div class="input-prefix">🇰🇪 +254</div>
+        <input class="input" id="s-phone" type="tel" placeholder="712 345 678" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="divider">or sign up with email</div>
+
+    <div class="field">
+      <input class="input" id="s-email" type="email" placeholder="Email address (optional)">
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <input class="input" id="s-password" type="password" placeholder="Min 6 characters">
+    </div>
+
+    <button class="btn btn-gold" onclick="handleSignup()">Create Account →</button>
+    <button class="btn btn-outline" onclick="goScreen('screen-welcome')">← Already have an account</button>
+  </div>
+</div>
+
+<!-- ── SCREEN 4: ONBOARDING - BUSINESS TYPE ── -->
+<div class="screen" id="screen-onboard-type">
+  <div class="logo">
+    <div class="logo-icon">🏢</div>
+    <div class="logo-text">Biz<span>Flow</span></div>
+  </div>
+  <div class="card">
+    <div class="steps">
+      <div class="step active"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+    </div>
+    <div class="card-title">What type of business?</div>
+    <p class="card-sub">We'll customize BizFlow for your industry.</p>
+
+    <div class="biz-type-grid">
+      <div class="biz-type-card" onclick="selectBizType('Salon & Beauty', this)">
+        <div class="biz-type-icon">💇</div>
+        <div class="biz-type-name">Salon & Beauty</div>
+      </div>
+      <div class="biz-type-card" onclick="selectBizType('Restaurant & Café', this)">
+        <div class="biz-type-icon">🍽️</div>
+        <div class="biz-type-name">Restaurant & Café</div>
+      </div>
+      <div class="biz-type-card" onclick="selectBizType('Law Firm', this)">
+        <div class="biz-type-icon">⚖️</div>
+        <div class="biz-type-name">Law Firm</div>
+      </div>
+      <div class="biz-type-card" onclick="selectBizType('Bookshop & Retail', this)">
+        <div class="biz-type-icon">📚</div>
+        <div class="biz-type-name">Bookshop & Retail</div>
+      </div>
+      <div class="biz-type-card" onclick="selectBizType('Betting Shop', this)">
+        <div class="biz-type-icon">🎯</div>
+        <div class="biz-type-name">Betting Shop</div>
+      </div>
+      <div class="biz-type-card" onclick="selectBizType('Other', this)">
+        <div class="biz-type-icon">🏢</div>
+        <div class="biz-type-name">Other</div>
+      </div>
+    </div>
+
+    <div id="type-msg" class="msg"></div>
+    <button class="btn btn-gold" onclick="goOnboardStep2()">Continue →</button>
+  </div>
+</div>
+
+<!-- ── SCREEN 5: ONBOARDING - BUSINESS DETAILS ── -->
+<div class="screen" id="screen-onboard-details">
+  <div class="logo">
+    <div class="logo-icon">🏢</div>
+    <div class="logo-text">Biz<span>Flow</span></div>
+  </div>
+  <div class="card">
+    <div class="steps">
+      <div class="step done"></div>
+      <div class="step active"></div>
+      <div class="step"></div>
+    </div>
+    <div class="card-title">About your business</div>
+    <p class="card-sub">Tell us a bit about your business.</p>
+
+    <div id="details-msg" class="msg"></div>
+
+    <div class="field">
+      <label>Business Name</label>
+      <input class="input" id="o-bizname" type="text" placeholder="e.g. Njeri's Salon">
+    </div>
+    <div class="field">
+      <label>Town / Location</label>
+      <input class="input" id="o-location" type="text" placeholder="e.g. Nakuru, Kisumu, Nairobi...">
+    </div>
+    <div class="field">
+      <label>Business Phone (optional)</label>
+      <input class="input" id="o-bizphone" type="tel" placeholder="e.g. 0712 345 678">
+    </div>
+
+    <button class="btn btn-gold" onclick="goOnboardStep3()">Continue →</button>
+    <button class="btn btn-outline" onclick="goScreen('screen-onboard-type')">← Back</button>
+  </div>
+</div>
+
+<!-- ── SCREEN 6: ONBOARDING - CHOOSE PLAN ── -->
+<div class="screen" id="screen-onboard-plan">
+  <div class="logo">
+    <div class="logo-icon">🏢</div>
+    <div class="logo-text">Biz<span>Flow</span></div>
+  </div>
+  <div class="card">
+    <div class="steps">
+      <div class="step done"></div>
+      <div class="step done"></div>
+      <div class="step active"></div>
+    </div>
+    <div class="card-title">Choose your plan</div>
+    <p class="card-sub">All plans include a 14-day free trial. You can change anytime.</p>
+
+    <div class="plan-grid">
+      <div class="plan-card" onclick="selectPlan('starter', this)">
+        <div>
+          <div class="plan-name">Starter</div>
+          <div class="plan-desc">1 location · up to 5 staff</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="plan-price">999 <span>KES/mo</span></div>
+        </div>
+      </div>
+
+      <div class="plan-card featured selected" onclick="selectPlan('pro', this)">
+        <div>
+          <div class="plan-name">Professional</div>
+          <div class="plan-desc">3 locations · up to 20 staff</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="plan-price">2,499 <span>KES/mo</span></div>
+          <div class="plan-badge">Popular</div>
+        </div>
+      </div>
+
+      <div class="plan-card" onclick="selectPlan('enterprise', this)">
+        <div>
+          <div class="plan-name">Enterprise</div>
+          <div class="plan-desc">Unlimited locations & staff</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="plan-price">5,999 <span>KES/mo</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px;">
+      🎉 Your 14-day free trial starts now — no payment needed yet
+    </div>
+
+    <div id="plan-msg" class="msg"></div>
+    <button class="btn btn-gold" onclick="completeOnboarding()">Start My Free Trial →</button>
+    <button class="btn btn-outline" onclick="goScreen('screen-onboard-details')">← Back</button>
+  </div>
+</div>
+
+<!-- ── SCREEN 7: SUCCESS ── -->
+<div class="screen" id="screen-success">
+  <div style="text-align:center;padding:40px 20px;">
+    <div style="font-size:72px;margin-bottom:24px;">🎉</div>
+    <div class="logo-text" style="font-family:'Cormorant Garamond',serif;font-size:36px;margin-bottom:12px;">
+      Biz<span style="color:var(--gold);">Flow</span>
+    </div>
+    <h2 style="font-size:24px;font-weight:700;margin-bottom:12px;" id="success-title">You're all set!</h2>
+    <p style="color:var(--muted);font-size:15px;margin-bottom:40px;line-height:1.6;" id="success-sub">
+      Your business is ready. Let's get started!
+    </p>
+    <button class="btn btn-gold" onclick="goToDashboard()" style="max-width:320px;margin:0 auto;">
+      Open My Dashboard →
+    </button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://geqhizgmxfnhdfqxhhll.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlcWhpemdteGZuaGRmcXhoaGxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNDg3MDQsImV4cCI6MjA5NTkyNDcwNH0.gOBrJ5odMix65N5PbG7fJzbPzJUkgGHuFRp1cTbHpWI';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let selectedBizType = '';
+let selectedPlan = 'pro';
+let contactInput = '';
+
+// ── INIT ──
+window.addEventListener('load', async () => {
+  // Listen for auth state changes
+  db.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      const { data: biz } = await db.from('businesses').select('*').eq('owner_id', session.user.id).single();
+      if (biz) {
+        window.location.href = 'dashboard.html';
+      } else {
+        goScreen('screen-onboard-type');
+      }
+    }
+  });
+
+  // Also check existing session on load
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    const { data: biz } = await db.from('businesses').select('*').eq('owner_id', session.user.id).single();
+    if (biz) {
+      window.location.href = 'dashboard.html';
+      return;
+    } else {
+      goScreen('screen-onboard-type');
+      return;
+    }
+  }
+});
+
+// ── NAVIGATION ──
+function goScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showLoading(text = 'Please wait...') {
+  document.getElementById('loading-text').textContent = text;
+  document.getElementById('loading').classList.add('show');
+}
+
+function hideLoading() {
+  document.getElementById('loading').classList.remove('show');
+}
+
+function showMsg(id, text, type = 'error') {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'msg ' + type;
+}
+
+function hideMsg(id) {
+  const el = document.getElementById(id);
+  el.className = 'msg';
+}
+
+// ── HANDLE CONTACT (phone or email) ──
+async function handleContact() {
+  contactInput = document.getElementById('w-contact').value.trim();
+  if (!contactInput) { showMsg('welcome-msg', 'Please enter your phone or email'); return; }
+
+  showLoading('Checking account...');
+  hideMsg('welcome-msg');
+
+  // Normalize phone number
+  let loginContact = contactInput;
+  if (/^0\d{9}$/.test(contactInput.replace(/\s/g, ''))) {
+    loginContact = '+254' + contactInput.replace(/\s/g, '').substring(1);
+  } else if (/^254\d{9}$/.test(contactInput.replace(/\s/g, ''))) {
+    loginContact = '+' + contactInput.replace(/\s/g, '');
+  }
+
+  hideLoading();
+  document.getElementById('login-sub').textContent = `Signing in as ${contactInput}`;
+  goScreen('screen-login');
+}
+
+// ── LOGIN ──
+async function handleLogin() {
+  const password = document.getElementById('l-password').value;
+  if (!password) { showMsg('login-msg', 'Please enter your password'); return; }
+
+  showLoading('Signing in...');
+  hideMsg('login-msg');
+
+  let loginContact = contactInput;
+  if (/^0\d{9}$/.test(contactInput.replace(/\s/g, ''))) {
+    loginContact = '+254' + contactInput.replace(/\s/g, '').substring(1);
+  }
+
+  // Try email login
+  const isEmail = contactInput.includes('@');
+  let result;
+
+  if (isEmail) {
+    result = await db.auth.signInWithPassword({ email: contactInput, password });
+  } else {
+    // Phone login - use email format with phone
+    result = await db.auth.signInWithPassword({ phone: loginContact, password });
+  }
+
+  hideLoading();
+
+  if (result.error) {
+    showMsg('login-msg', result.error.message || 'Invalid credentials. Please try again.');
+    return;
+  }
+
+  // Check if onboarding complete
+  const { data: biz } = await db.from('businesses').select('*').eq('owner_id', result.data.user.id).single();
+  if (biz) {
+    goToDashboard();
+  } else {
+    goScreen('screen-onboard-type');
+  }
+}
+
+// ── FORGOT PASSWORD ──
+async function handleForgotPassword() {
+  if (!contactInput.includes('@')) {
+    showMsg('login-msg', 'Password reset is only available via email. Please use your email address to sign in.');
+    return;
+  }
+  showLoading('Sending reset email...');
+  const { error } = await db.auth.resetPasswordForEmail(contactInput, {
+    redirectTo: window.location.origin + '/bizflow/app.html'
+  });
+  hideLoading();
+  if (error) {
+    showMsg('login-msg', error.message);
+  } else {
+    showMsg('login-msg', '✅ Password reset email sent! Check your inbox.', 'success');
+  }
+}
+
+// ── SIGN UP ──
+async function handleSignup() {
+  const name = document.getElementById('s-name').value.trim();
+  const phone = document.getElementById('s-phone').value.trim().replace(/\s/g, '');
+  const email = document.getElementById('s-email').value.trim();
+  const password = document.getElementById('s-password').value;
+
+  if (!name) { showMsg('signup-msg', 'Please enter your full name'); return; }
+  if (!phone && !email) { showMsg('signup-msg', 'Please enter your phone number or email'); return; }
+  if (password.length < 6) { showMsg('signup-msg', 'Password must be at least 6 characters'); return; }
+
+  showLoading('Creating your account...');
+  hideMsg('signup-msg');
+
+  let result;
+
+  if (email) {
+    // Sign up with email
+    result = await db.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: name, phone: phone ? '+254' + phone : '' } }
+    });
+  } else {
+    // Sign up with phone
+    const fullPhone = '+254' + phone;
+    result = await db.auth.signUp({
+      phone: fullPhone,
+      password,
+      options: { data: { full_name: name } }
+    });
+  }
+
+  hideLoading();
+
+  if (result.error) {
+    showMsg('signup-msg', result.error.message || 'Signup failed. Please try again.');
+    return;
+  }
+
+  // Save name for onboarding
+  localStorage.setItem('bf_name', name);
+  localStorage.setItem('bf_phone', phone ? '+254' + phone : '');
+  localStorage.setItem('bf_email', email);
+
+  goScreen('screen-onboard-type');
+}
+
+// ── ONBOARDING STEP 1 ──
+function selectBizType(type, el) {
+  document.querySelectorAll('.biz-type-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedBizType = type;
+}
+
+function goOnboardStep2() {
+  if (!selectedBizType) { showMsg('type-msg', 'Please select your business type'); return; }
+  goScreen('screen-onboard-details');
+}
+
+// ── ONBOARDING STEP 2 ──
+function goOnboardStep3() {
+  const bizname = document.getElementById('o-bizname').value.trim();
+  const location = document.getElementById('o-location').value.trim();
+  if (!bizname) { showMsg('details-msg', 'Please enter your business name'); return; }
+  if (!location) { showMsg('details-msg', 'Please enter your location'); return; }
+  goScreen('screen-onboard-plan');
+}
+
+// ── ONBOARDING STEP 3 ──
+function selectPlan(plan, el) {
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedPlan = plan;
+}
+
+async function completeOnboarding() {
+  const bizname = document.getElementById('o-bizname').value.trim();
+  const location = document.getElementById('o-location').value.trim();
+  const bizphone = document.getElementById('o-bizphone').value.trim();
+
+  showLoading('Setting up your business...');
+  hideMsg('plan-msg');
+
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) {
+    hideLoading();
+    showMsg('plan-msg', 'Session expired. Please sign in again.');
+    goScreen('screen-welcome');
+    return;
+  }
+
+  const { error } = await db.from('businesses').insert({
+    owner_id: user.id,
+    name: bizname,
+    type: selectedBizType,
+    location,
+    phone: bizphone || localStorage.getItem('bf_phone') || '',
+    email: localStorage.getItem('bf_email') || user.email || '',
+    plan: selectedPlan,
+    trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    subscription_active: true
+  });
+
+  hideLoading();
+
+  if (error) {
+    showMsg('plan-msg', 'Setup failed: ' + (error.message || JSON.stringify(error)));
+    console.error('Supabase error:', error);
+    return;
+  }
+
+  // Show success then redirect
+  const name = localStorage.getItem('bf_name') || 'there';
+  document.getElementById('success-title').textContent = `Welcome to BizFlow, ${name.split(' ')[0]}!`;
+  document.getElementById('success-sub').textContent = `${bizname} is ready. Your 14-day free trial has started.`;
+  goScreen('screen-success');
+  // Auto redirect after 2 seconds
+  setTimeout(() => { window.location.href = 'dashboard.html'; }, 2000);
+}
+
+// ── GO TO DASHBOARD ──
+function goToDashboard() {
+  window.location.href = 'dashboard.html';
+}
+</script>
+</body>
+</html>
