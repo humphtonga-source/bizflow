@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>BizFlow — Salon Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:  #0A0A0A;
+  --black2: #111111;
+  --black3: #1A1A1A;
+  --gold:   #C9A84C;
+  --gold2:  #E8C56A;
+  --goldl:  rgba(201,168,76,0.1);
+  --pink:   #EC4899;
+  --pinkl:  rgba(236,72,153,0.1);
+  --white:  #FAFAFA;
+  --white2: #E8E8E8;
+  --muted:  #888888;
+  --green:  #22C55E;
+  --greenl: rgba(34,197,94,0.1);
+  --red:    #EF4444;
+  --redl:   rgba(239,68,68,0.1);
+  --blue:   #3B82F6;
+  --bluel:  rgba(59,130,246,0.1);
+  --border: rgba(201,168,76,0.15);
+  --radius: 14px;
+  --sidebar-width: 240px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--black);
+  color: var(--white);
+  min-height: 100vh;
+}
+
+/* ── LAYOUT ── */
+.app-wrapper { display: flex; height: 100vh; }
+
+/* ── LOADING ── */
+#loading {
+  position: fixed; inset: 0;
+  background: var(--black);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 2000; gap: 16px;
+}
+
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(201,168,76,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--black2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+  transition: transform 0.3s ease;
+  scrollbar-width: thin;
+}
+
+.sidebar.hidden { transform: translateX(-100%); }
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    z-index: 200;
+  }
+}
+
+/* ── SIDEBAR HEADER ── */
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.sidebar-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-logo span { color: var(--pink); }
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 20px;
+  padding: 6px;
+  display: none;
+  transition: color 0.2s;
+}
+
+.sidebar-toggle:hover { color: var(--pink); }
+
+@media (max-width: 768px) {
+  .sidebar-toggle { display: block; }
+}
+
+/* ── SIDEBAR INFO ── */
+.sidebar-info {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sidebar-biz-name { font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 2px; }
+.sidebar-biz-role { font-size: 11px; color: var(--pink); font-weight: 600; }
+.sidebar-biz-user { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── NAV ── */
+.nav-section {
+  padding: 12px 0;
+  flex-shrink: 0;
+}
+
+.nav-section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  padding: 10px 20px 8px 20px;
+  font-weight: 600;
+}
+
+.nav-btn {
+  width: 100%;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover {
+  color: var(--pink);
+  background: rgba(236,72,153,0.05);
+}
+
+.nav-btn.active {
+  color: var(--pink);
+  background: rgba(236,72,153,0.08);
+  border-left-color: var(--pink);
+}
+
+.nav-icon { font-size: 18px; flex-shrink: 0; }
+
+/* ── SIDEBAR FOOTER ── */
+.sidebar-spacer { flex: 1; }
+
+.sidebar-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.btn-signout {
+  width: 100%;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-signout:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* ── MAIN AREA ── */
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-left: var(--sidebar-width);
+  transition: margin-left 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .main-area { margin-left: 0; }
+}
+
+/* ── HEADER ── */
+#mobile-header {
+  background: var(--black2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  height: 60px;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.header-toggle {
+  background: none;
+  border: none;
+  color: var(--pink);
+  cursor: pointer;
+  font-size: 20px;
+  padding: 6px;
+}
+
+@media (max-width: 768px) {
+  #mobile-header { display: flex; }
+}
+
+/* ── TRIAL BANNER ── */
+.trial-banner {
+  background: var(--goldl);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  font-size: 13px;
+  color: var(--gold);
+  text-align: center;
+  display: none;
+  flex-shrink: 0;
+}
+
+/* ── CONTENT ── */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .content { padding: 16px; }
+}
+
+/* ── SECTION ── */
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── CARD ── */
+.card {
+  background: var(--black2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+
+.card:hover { border-color: rgba(236,72,153,0.3); }
+
+.card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+}
+
+/* ── INPUT ── */
+.input {
+  width: 100%;
+  background: var(--black3);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+  margin-bottom: 12px;
+}
+
+.input:focus {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px rgba(236,72,153,0.1);
+}
+
+.input::placeholder { color: var(--muted); }
+select.input { cursor: pointer; }
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:active { transform: scale(0.98); }
+
+.btn-gold {
+  background: var(--gold);
+  color: var(--black);
+  box-shadow: 0 4px 12px rgba(201,168,76,0.2);
+}
+
+.btn-gold:hover {
+  background: var(--gold2);
+  box-shadow: 0 6px 16px rgba(201,168,76,0.3);
+}
+
+.btn-pink {
+  background: var(--pinkl);
+  color: var(--pink);
+  border: 1px solid rgba(236,72,153,0.2);
+}
+
+.btn-pink:hover {
+  background: rgba(236,72,153,0.15);
+  border-color: var(--pink);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.btn-outline:hover {
+  border-color: var(--pink);
+  color: var(--pink);
+  background: rgba(236,72,153,0.05);
+}
+
+.btn-red {
+  background: var(--redl);
+  color: var(--red);
+  border: 1px solid rgba(239,68,68,0.2);
+}
+
+.btn-red:hover {
+  background: rgba(239,68,68,0.2);
+  border-color: var(--red);
+}
+
+.btn-green {
+  background: var(--greenl);
+  color: var(--green);
+  border: 1px solid rgba(34,197,94,0.2);
+}
+
+.btn-full { width: 100%; padding: 14px; font-size: 15px; }
+.btn-sm { padding: 8px 16px; font-size: 12px; }
+
+/* ── ROWS & FLEX ── */
+.row { display: flex; gap: 10px; align-items: center; }
+.flex-1 { flex: 1; }
+
+/* ── APPOINTMENT CARD ── */
+.appt-card {
+  background: var(--black3);
+  border-left: 4px solid var(--pink);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 12px;
+  transition: all 0.2s;
+}
+
+.appt-card:hover { border-left-color: var(--gold); background: rgba(26,26,26,0.8); }
+
+.appt-card.done { border-left-color: var(--green); opacity: 0.7; }
+.appt-card.cancelled { border-left-color: var(--red); opacity: 0.6; }
+
+.appt-time {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--gold);
+  min-width: 70px;
+  text-align: center;
+  line-height: 1;
+}
+
+.appt-info { flex: 1; }
+.appt-client { font-size: 15px; font-weight: 600; }
+.appt-service { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.appt-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ── SERVICE CARD ── */
+.service-item {
+  background: var(--black3);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.service-item:hover {
+  border-color: var(--border);
+  background: rgba(26,26,26,0.8);
+  transform: translateX(4px);
+}
+
+.service-item.selected {
+  background: var(--goldl);
+  border-color: var(--gold);
+}
+
+.service-name { font-size: 14px; font-weight: 600; }
+.service-duration { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.service-price { font-size: 15px; font-weight: 800; color: var(--gold); }
+
+/* ── STAT GRID ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .stat-grid { grid-template-columns: 1fr; }
+}
+
+.stat-card {
+  background: var(--black2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+.stat-value { font-size: 24px; font-weight: 800; color: var(--gold); margin-top: 8px; }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── BADGE ── */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-green { background: var(--greenl); color: var(--green); }
+.badge-red { background: var(--redl); color: var(--red); }
+.badge-gold { background: var(--goldl); color: var(--gold); }
+.badge-pink { background: var(--pinkl); color: var(--pink); }
+
+/* ── EMPTY ── */
+.empty {
+  text-align: center;
+  padding: 50px 20px;
+  color: var(--muted);
+}
+
+.empty-icon { font-size: 48px; margin-bottom: 14px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--black2);
+  border: 1px solid var(--border);
+  color: var(--white);
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  z-index: 999;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(400px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* ── OVERLAY ── */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 99;
+  display: none;
+}
+
+.sidebar-overlay.show { display: block; }
+
+label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 8px; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--muted);">Loading Salon...</div>
+</div>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">💇 Biz<span>Flow</span></div>
+    <button class="sidebar-toggle" onclick="toggleSidebar()">✕</button>
+  </div>
+
+  <div class="sidebar-info">
+    <div class="sidebar-biz-name" id="sb-bizname">-</div>
+    <div class="sidebar-biz-role" id="sb-role">ADMIN</div>
+    <div class="sidebar-biz-user" id="sb-user">-</div>
+  </div>
+
+  <div id="sidebar-nav"></div>
+
+  <div class="sidebar-spacer"></div>
+
+  <div class="sidebar-footer">
+    <button class="btn-signout" onclick="signOut()">
+      <span>🚪</span>
+      <span>Sign Out</span>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN AREA -->
+<div class="main-area">
+  <!-- MOBILE HEADER -->
+  <div id="mobile-header">
+    <button class="header-toggle" onclick="toggleSidebar()">☰</button>
+  </div>
+
+  <!-- TRIAL BANNER -->
+  <div class="trial-banner" id="trial-banner"></div>
+
+  <!-- CONTENT -->
+  <div class="content" id="main-content" style="display:none;">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="section active" id="sec-dashboard">
+      <div class="stat-grid" id="dash-stats"></div>
+      <div class="card" id="dash-welcome"></div>
+    </div>
+
+    <!-- ── APPOINTMENTS ── -->
+    <div class="section" id="sec-appointments">
+      <div class="card" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:16px;font-weight:700;">📅 Appointments</div>
+          <div style="font-size:12px;color:var(--muted);" id="appt-date-lbl"></div>
+        </div>
+        <button class="btn btn-gold btn-sm" onclick="showAddAppt()">+ Book</button>
+      </div>
+
+      <!-- APPOINTMENT FORM -->
+      <div id="add-appt-form" style="display:none;">
+        <div class="card">
+          <div class="card-title">📋 Quick Booking</div>
+          
+          <!-- Step 1: Select Service -->
+          <div id="appt-step-service">
+            <label>Select Service</label>
+            <div id="appt-services-list" style="max-height:300px;overflow-y:auto;"></div>
+          </div>
+
+          <!-- Step 2: Client Details -->
+          <div id="appt-step-client" style="display:none;">
+            <label>Client Name</label>
+            <input class="input" id="a-client" placeholder="e.g. Mary Wanjiku">
+            <label>Phone Number</label>
+            <input class="input" id="a-phone" type="tel" placeholder="e.g. 0712 345 678">
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+              <a href="#" id="whatsapp-link" target="_blank" class="btn btn-pink btn-sm flex-1">💬 WhatsApp</a>
+              <button class="btn btn-outline btn-sm flex-1" onclick="document.getElementById('a-phone').select()">Copy Phone</button>
+            </div>
+          </div>
+
+          <!-- Step 3: Time & Details -->
+          <div id="appt-step-time" style="display:none;">
+            <label>Time</label>
+            <input class="input" id="a-time" type="time">
+            <label>Date</label>
+            <input class="input" id="a-date" type="date">
+            
+            <div id="appt-stylist-select" style="display:none;">
+              <label>Assign to Stylist</label>
+              <select class="input" id="a-stylist"></select>
+            </div>
+
+            <label>Payment Method</label>
+            <select class="input" id="a-payment">
+              <option>Cash</option>
+              <option>M-Pesa</option>
+              <option>Card</option>
+              <option>Pending</option>
+            </select>
+
+            <label>Notes (optional)</label>
+            <input class="input" id="a-notes" placeholder="e.g. Bring reference photo...">
+
+            <div class="row">
+              <button class="btn btn-outline flex-1" onclick="apptPrevStep()">← Back</button>
+              <button class="btn btn-gold flex-1" onclick="addAppt()">✓ Confirm</button>
+            </div>
+            <button class="btn btn-outline btn-full" onclick="hideAddAppt()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DATE & FILTER -->
+      <div class="card" style="padding:12px 16px;">
+        <div class="row">
+          <input class="input flex-1" id="appt-filter-date" type="date" style="margin-bottom:0;" onchange="renderAppointments()">
+          <select class="input" id="appt-filter-status" style="margin-bottom:0;width:140px;" onchange="renderAppointments()">
+            <option value="">All</option>
+            <option value="pending">Pending</option>
+            <option value="done">✓ Completed</option>
+            <option value="cancelled">✕ Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- APPOINTMENTS LIST -->
+      <div id="appt-list"></div>
+    </div>
+
+    <!-- ── SERVICES ── -->
+    <div class="section" id="sec-services">
+      <div class="card" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:16px;font-weight:700;">✂️ Service Menu</div>
+        <button class="btn btn-gold btn-sm" id="btn-add-service" onclick="showAddService()">+ Add</button>
+      </div>
+
+      <div id="add-service-form" style="display:none;">
+        <div class="card">
+          <div class="card-title">Add Service</div>
+          <label>Service Name</label>
+          <input class="input" id="svc-name" placeholder="e.g. Ladies Haircut">
+          <label>Category</label>
+          <select class="input" id="svc-category">
+            <option>Hair</option>
+            <option>Nails</option>
+            <option>Braiding</option>
+            <option>Skincare</option>
+            <option>Makeup</option>
+            <option>Barbering</option>
+            <option>Other</option>
+          </select>
+          <label>Price (KES)</label>
+          <input class="input" id="svc-price" type="number" placeholder="e.g. 500">
+          <label>Duration (minutes)</label>
+          <input class="input" id="svc-duration" type="number" placeholder="e.g. 30">
+          <div class="row">
+            <button class="btn btn-gold flex-1" onclick="addService()">Save Service</button>
+            <button class="btn btn-outline" onclick="hideAddService()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="service-categories"></div>
+    </div>
+
+    <!-- ── STYLISTS ── -->
+    <div class="section" id="sec-stylists">
+      <div class="card" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:16px;font-weight:700;">💇 Stylists</div>
+        <button class="btn btn-gold btn-sm" id="btn-add-stylist" onclick="showAddStylist()">+ Add</button>
+      </div>
+
+      <div id="add-stylist-form" style="display:none;">
+        <div class="card">
+          <div class="card-title">Add Stylist</div>
+          <label>Full Name</label>
+          <input class="input" id="st-name" placeholder="e.g. Grace Njeri">
+          <label>Speciality</label>
+          <select class="input" id="st-role">
+            <option>Hair Stylist</option>
+            <option>Nail Technician</option>
+            <option>Braider</option>
+            <option>Barber</option>
+            <option>Skincare Specialist</option>
+            <option>Makeup Artist</option>
+          </select>
+          <label>Phone Number</label>
+          <input class="input" id="st-phone" type="tel" placeholder="e.g. 0712 345 678">
+          <label>Pay Structure</label>
+          <select class="input" id="st-pay">
+            <option value="commission">Commission Based (%)</option>
+            <option value="salary">Fixed Salary</option>
+            <option value="both">Salary + Commission</option>
+          </select>
+          <div id="st-commission-wrap">
+            <label>Commission Rate (%)</label>
+            <input class="input" id="st-commission" type="number" placeholder="e.g. 40" min="0" max="100">
+          </div>
+          <div id="st-salary-wrap" style="display:none;">
+            <label>Monthly Salary (KES)</label>
+            <input class="input" id="st-salary" type="number" placeholder="e.g. 15000">
+          </div>
+          <div class="row">
+            <button class="btn btn-gold flex-1" onclick="addStylist()">Save Stylist</button>
+            <button class="btn btn-outline" onclick="hideAddStylist()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="stylist-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://geqhizgmxfnhdfqxhhll.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlcWhpemdteGZuaGRmcXhoaGxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNDg3MDQsImV4cCI6MjA5NTkyNDcwNH0.gOBrJ5odMix65N5PbG7fJzbPzJUkgGHuFRp1cTbHpWI';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// STATE
+let S = {
+  user: null,
+  business: null,
+  currentStylist: null,
+  isAdmin: false,
+  stylists: [],
+  services: [],
+  appointments: [],
+  selectedService: null,
+  apptStep: 'service'
+};
+
+let sidebarOpen = window.innerWidth > 768;
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebarOpen = !sidebarOpen;
+  if (sidebarOpen) {
+    sidebar.classList.remove('hidden');
+    overlay.classList.remove('show');
+  } else {
+    sidebar.classList.add('hidden');
+    overlay.classList.add('show');
+  }
+}
+
+function showToast(msg, dur = 3000) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), dur);
+}
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function fmt(v) {
+  return Math.round(v).toLocaleString('en-KE');
+}
+
+function goTab(tab) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + tab)?.classList.add('active');
+  document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
+  if (window.innerWidth <= 768) toggleSidebar();
+}
+
+// ── INIT ──
+window.addEventListener('load', async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) { window.location.href = 'app.html'; return; }
+  S.user = session.user;
+
+  const { data: biz } = await db.from('businesses').select('*').eq('owner_id', S.user.id).single();
+  if (!biz) { window.location.href = 'app.html'; return; }
+  S.business = biz;
+  S.isAdmin = true; // Business owner is always admin
+
+  const userName = S.user.user_metadata?.full_name || 'User';
+  document.getElementById('sb-bizname').textContent = biz.name;
+  document.getElementById('sb-role').textContent = 'ADMIN';
+  document.getElementById('sb-user').textContent = userName;
+
+  // Build sidebar
+  const navHtml = `
+    <div class="nav-section">
+      <div class="nav-section-title">Main</div>
+      <button class="nav-btn active" data-tab="dashboard" onclick="goTab('dashboard', this)"><span class="nav-icon">🏠</span>Dashboard</button>
+      <button class="nav-btn" data-tab="appointments" onclick="goTab('appointments', this)"><span class="nav-icon">📅</span>Appointments</button>
+      <button class="nav-btn" data-tab="services" onclick="goTab('services', this)"><span class="nav-icon">✂️</span>Services</button>
+      <button class="nav-btn" data-tab="stylists" onclick="goTab('stylists', this)"><span class="nav-icon">💇</span>Stylists</button>
+    </div>
+  `;
+  document.getElementById('sidebar-nav').innerHTML = navHtml;
+
+  // Trial banner
+  const daysLeft = Math.ceil((new Date(biz.trial_ends_at) - new Date()) / 86400000);
+  if (daysLeft > 0 && biz.plan !== 'paid') {
+    document.getElementById('trial-banner').style.display = 'block';
+    document.getElementById('trial-banner').textContent = `🎉 Free trial: ${daysLeft} days remaining`;
+  }
+
+  // Load data
+  await Promise.all([loadStylists(), loadServices(), loadAppointments()]);
+
+  // Set dates
+  document.getElementById('appt-filter-date').value = todayStr();
+  document.getElementById('appt-date-lbl').textContent = new Date().toLocaleDateString('en-KE', { weekday: 'long', day: 'numeric', month: 'long' });
+  document.getElementById('a-date').value = todayStr();
+
+  // Show UI
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('main-content').style.display = 'block';
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.add('hidden');
+  }
+
+  renderDashboard();
+  renderAppointments();
+  renderServices();
+  renderStylists();
+});
+
+// ── APPOINTMENTS ──
+async function loadAppointments() {
+  let query = db.from('salon_appointments').select('*').eq('business_id', S.business.id);
+
+  // If stylist, only load their appointments
+  if (S.currentStylist) {
+    query = query.eq('stylist_id', S.currentStylist.id);
+  }
+
+  const { data } = await query.order('date').order('time');
+  S.appointments = data || [];
+}
+
+function showAddAppt() {
+  S.apptStep = 'service';
+  S.selectedService = null;
+  document.getElementById('add-appt-form').style.display = 'block';
+  renderServicesList();
+  document.getElementById('appt-step-service').style.display = 'block';
+  document.getElementById('appt-step-client').style.display = 'none';
+  document.getElementById('appt-step-time').style.display = 'none';
+}
+
+function hideAddAppt() {
+  document.getElementById('add-appt-form').style.display = 'none';
+  document.getElementById('a-client').value = '';
+  document.getElementById('a-phone').value = '';
+  document.getElementById('a-notes').value = '';
+}
+
+function selectService(serviceId) {
+  const service = S.services.find(s => s.id === serviceId);
+  if (!service) return;
+
+  S.selectedService = service;
+  document.getElementById('appt-step-service').style.display = 'none';
+  document.getElementById('appt-step-client').style.display = 'block';
+  document.getElementById('appt-step-time').style.display = 'none';
+  S.apptStep = 'client';
+
+  // Show stylist selection only for admin
+  if (S.isAdmin) {
+    document.getElementById('appt-stylist-select').style.display = 'block';
+    populateSelect('a-stylist', S.stylists.map(s => ({ value: s.id, label: s.name })));
+  }
+}
+
+function apptNextStep() {
+  if (S.apptStep === 'client') {
+    document.getElementById('appt-step-client').style.display = 'none';
+    document.getElementById('appt-step-time').style.display = 'block';
+    S.apptStep = 'time';
+  }
+}
+
+function apptPrevStep() {
+  if (S.apptStep === 'time') {
+    document.getElementById('appt-step-client').style.display = 'block';
+    document.getElementById('appt-step-time').style.display = 'none';
+    S.apptStep = 'client';
+  } else if (S.apptStep === 'client') {
+    document.getElementById('appt-step-service').style.display = 'block';
+    document.getElementById('appt-step-client').style.display = 'none';
+    S.apptStep = 'service';
+  }
+}
+
+function renderServicesList() {
+  const list = document.getElementById('appt-services-list');
+  list.innerHTML = S.services.map(s => `
+    <div class="service-item ${S.selectedService?.id === s.id ? 'selected' : ''}" onclick="selectService('${s.id}')">
+      <div>
+        <div class="service-name">${s.name}</div>
+        <div class="service-duration">⏱ ${s.duration || 30}min</div>
+      </div>
+      <div class="service-price">KES ${fmt(s.price)}</div>
+    </div>
+  `).join('');
+}
+
+async function addAppt() {
+  if (!S.selectedService) { showToast('⚠️ Select a service'); return; }
+  const client = document.getElementById('a-client').value.trim();
+  if (!client) { showToast('⚠️ Enter client name'); return; }
+  const time = document.getElementById('a-time').value;
+  if (!time) { showToast('⚠️ Select time'); return; }
+
+  const stylistId = S.currentStylist?.id || document.getElementById('a-stylist').value;
+  const stylist = S.stylists.find(s => s.id === stylistId);
+
+  const { error } = await db.from('salon_appointments').insert({
+    business_id: S.business.id,
+    client_name: client,
+    client_phone: document.getElementById('a-phone').value.trim(),
+    service: S.selectedService.name,
+    service_id: S.selectedService.id,
+    service_price: S.selectedService.price,
+    duration: S.selectedService.duration || 30,
+    stylist_id: stylistId || null,
+    stylist_name: stylist?.name || 'Unassigned',
+    time,
+    date: document.getElementById('a-date').value,
+    notes: document.getElementById('a-notes').value.trim(),
+    payment: document.getElementById('a-payment').value,
+    status: 'pending'
+  });
+
+  if (error) { showToast('❌ Failed'); return; }
+  hideAddAppt();
+  await loadAppointments();
+  renderAppointments();
+  renderDashboard();
+  showToast('✅ Appointment booked!');
+}
+
+function renderAppointments() {
+  const filterDate = document.getElementById('appt-filter-date').value;
+  const filterStatus = document.getElementById('appt-filter-status').value;
+
+  let appts = S.appointments.filter(a => a.date === filterDate);
+  if (filterStatus) appts = appts.filter(a => a.status === filterStatus);
+
+  const list = document.getElementById('appt-list');
+  if (!appts.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📅</div>No appointments for this day.</div>`;
+    return;
+  }
+
+  list.innerHTML = appts.map(a => `
+    <div class="appt-card ${a.status}">
+      <div class="appt-time">${a.time || '--:--'}</div>
+      <div class="appt-info">
+        <div class="appt-client">${a.client_name} ${a.client_phone ? `<span style="color:var(--muted);font-size:12px;"> · ${a.client_phone}</span>` : ''}</div>
+        <div class="appt-service">${a.service} · ${a.stylist_name} · <b style="color:var(--gold)">KES ${fmt(a.service_price || 0)}</b></div>
+        ${a.notes ? `<div style="font-size:11px;color:var(--muted);margin-top:3px;">📝 ${a.notes}</div>` : ''}
+      </div>
+      <div class="appt-actions">
+        ${a.status === 'pending' ? `
+          <button class="btn btn-green btn-sm" onclick="updateApptStatus('${a.id}','done')">✓</button>
+          <button class="btn btn-red btn-sm" onclick="updateApptStatus('${a.id}','cancelled')">✕</button>
+        ` : `<span class="badge ${a.status === 'done' ? 'badge-green' : 'badge-red'}">${a.status}</span>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function updateApptStatus(id, status) {
+  await db.from('salon_appointments').update({ status }).eq('id', id);
+  await loadAppointments();
+  renderAppointments();
+  renderDashboard();
+}
+
+// ── SERVICES ──
+async function loadServices() {
+  const { data } = await db.from('salon_services').select('*').eq('business_id', S.business.id);
+  S.services = data || [];
+}
+
+function showAddService() {
+  document.getElementById('add-service-form').style.display = 'block';
+}
+
+function hideAddService() {
+  document.getElementById('add-service-form').style.display = 'none';
+  document.getElementById('svc-name').value = '';
+  document.getElementById('svc-price').value = '';
+  document.getElementById('svc-duration').value = '';
+}
+
+async function addService() {
+  const name = document.getElementById('svc-name').value.trim();
+  const price = parseFloat(document.getElementById('svc-price').value) || 0;
+  const duration = parseInt(document.getElementById('svc-duration').value) || 30;
+  if (!name) { showToast('⚠️ Enter service name'); return; }
+  if (price <= 0) { showToast('⚠️ Enter valid price'); return; }
+
+  const { error } = await db.from('salon_services').insert({
+    business_id: S.business.id,
+    name,
+    category: document.getElementById('svc-category').value,
+    price,
+    duration
+  });
+
+  if (error) { showToast('❌ Failed'); return; }
+  hideAddService();
+  await loadServices();
+  renderServices();
+  showToast('✅ Service added!');
+}
+
+function renderServices() {
+  const byCategory = {};
+  S.services.forEach(s => {
+    if (!byCategory[s.category]) byCategory[s.category] = [];
+    byCategory[s.category].push(s);
+  });
+
+  let html = '';
+  Object.entries(byCategory).forEach(([cat, svcs]) => {
+    html += `
+      <div class="card">
+        <div class="card-title">${cat}</div>
+        ${svcs.map(s => `
+          <div class="service-item">
+            <div>
+              <div class="service-name">${s.name}</div>
+              <div class="service-duration">⏱ ${s.duration || 30} minutes</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="service-price">KES ${fmt(s.price)}</div>
+              <button class="btn btn-red btn-sm" onclick="deleteService('${s.id}')">✕</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  });
+
+  if (!S.services.length) html = `<div class="card"><div class="empty"><div class="empty-icon">✂️</div>No services yet.</div></div>`;
+
+  document.getElementById('service-categories').innerHTML = html;
+}
+
+async function deleteService(id) {
+  if (!confirm('Delete this service?')) return;
+  await db.from('salon_services').delete().eq('id', id);
+  await loadServices();
+  renderServices();
+  showToast('✅ Deleted!');
+}
+
+// ── STYLISTS ──
+async function loadStylists() {
+  const { data } = await db.from('salon_stylists').select('*').eq('business_id', S.business.id);
+  S.stylists = data || [];
+}
+
+function showAddStylist() {
+  document.getElementById('add-stylist-form').style.display = 'block';
+}
+
+function hideAddStylist() {
+  document.getElementById('add-stylist-form').style.display = 'none';
+}
+
+async function addStylist() {
+  const name = document.getElementById('st-name').value.trim();
+  if (!name) { showToast('⚠️ Enter stylist name'); return; }
+
+  const { error } = await db.from('salon_stylists').insert({
+    business_id: S.business.id,
+    name,
+    speciality: document.getElementById('st-role').value,
+    phone: document.getElementById('st-phone').value.trim(),
+    pay_structure: document.getElementById('st-pay').value,
+    commission: document.getElementById('st-pay').value !== 'salary' ? parseFloat(document.getElementById('st-commission').value) || 0 : 0,
+    salary: document.getElementById('st-pay').value !== 'commission' ? parseFloat(document.getElementById('st-salary').value) || 0 : 0
+  });
+
+  if (error) { showToast('❌ Failed'); return; }
+  hideAddStylist();
+  document.getElementById('st-name').value = '';
+  document.getElementById('st-phone').value = '';
+  document.getElementById('st-commission').value = '';
+  document.getElementById('st-salary').value = '';
+  await loadStylists();
+  renderStylists();
+  showToast('✅ Stylist added!');
+}
+
+function renderStylists() {
+  const list = document.getElementById('stylist-list');
+  if (!S.stylists.length) {
+    list.innerHTML = `<div class="card"><div class="empty"><div class="empty-icon">💇</div>No stylists yet.</div></div>`;
+    return;
+  }
+
+  list.innerHTML = S.stylists.map(st => `
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+        <div style="width:44px;height:44px;background:var(--pinkl);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--pink);">
+          ${st.name.charAt(0).toUpperCase()}
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">${st.name}</div>
+          <div style="font-size:12px;color:var(--muted);">${st.speciality} ${st.phone ? '· ' + st.phone : ''}</div>
+        </div>
+        <button class="btn btn-red btn-sm" onclick="deleteStylist('${st.id}')">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+        <div style="background:var(--black3);padding:8px;border-radius:8px;text-align:center;">
+          <div style="color:var(--muted);margin-bottom:2px;">Pay</div>
+          <div style="font-weight:700;">${st.pay_structure}</div>
+        </div>
+        <div style="background:var(--black3);padding:8px;border-radius:8px;text-align:center;">
+          <div style="color:var(--muted);margin-bottom:2px;">Rate</div>
+          <div style="font-weight:700;color:var(--gold);">${st.commission ? st.commission + '%' : 'KES ' + fmt(st.salary)}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deleteStylist(id) {
+  if (!confirm('Delete this stylist?')) return;
+  await db.from('salon_stylists').delete().eq('id', id);
+  await loadStylists();
+  renderStylists();
+  showToast('✅ Deleted!');
+}
+
+// ── DASHBOARD ──
+function renderDashboard() {
+  const today = todayStr();
+  const todayAppts = S.appointments.filter(a => a.date === today);
+  const todayRevenue = todayAppts.filter(a => a.status === 'done').reduce((s, a) => s + (a.service_price || 0), 0);
+  const pendingAppts = todayAppts.filter(a => a.status === 'pending').length;
+
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Today's Revenue</div>
+      <div class="stat-value">KES ${fmt(todayRevenue)}</div>
+      <div class="stat-sub">Completed appointments</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pending Appointments</div>
+      <div class="stat-value">${pendingAppts}</div>
+      <div class="stat-sub">Today</div>
+    </div>
+  `;
+
+  document.getElementById('dash-welcome').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="font-size:44px;">💇</div>
+      <div>
+        <div style="font-size:18px;font-weight:700;">Welcome back, ${S.user.user_metadata?.full_name?.split(' ')[0] || 'Manager'}! 👋</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px;">${S.business.name} · ${new Date().toLocaleDateString('en-KE', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+      </div>
+    </div>
+  `;
+}
+
+function populateSelect(id, options) {
+  const select = document.getElementById(id);
+  select.innerHTML = '<option value="">-- Select --</option>' + options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+}
+
+async function signOut() {
+  await db.auth.signOut();
+  window.location.href = 'app.html';
+}
+
+document.getElementById('st-pay').addEventListener('change', function() {
+  document.getElementById('st-commission-wrap').style.display = this.value !== 'salary' ? 'block' : 'none';
+  document.getElementById('st-salary-wrap').style.display = this.value !== 'commission' ? 'block' : 'none';
+});
+
+// WhatsApp link helper
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'a-phone') {
+    const phone = e.target.value.replace(/\D/g, '');
+    const formattedPhone = phone.startsWith('254') ? phone : '254' + phone.slice(-9);
+    document.getElementById('whatsapp-link').href = `https://wa.me/${formattedPhone}?text=Hi%20${document.getElementById('a-client').value || 'there'},%20your%20appointment%20is%20confirmed!`;
+  }
+});
+</script>
+</body>
+</html>
