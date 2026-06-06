@@ -527,11 +527,13 @@ let STATE = {
   user: null,
   profession: null,
   businessId: null,
-  userRole: 'owner'
+  userRole: 'owner',
+  supabase: null
 };
 
 // Init
 async function init() {
+  STATE.supabase = supabase;
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
     STATE.user = session.user;
