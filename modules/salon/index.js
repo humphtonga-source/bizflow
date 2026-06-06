@@ -1,22 +1,9 @@
-// BizFlow Salon Module - Simple & Tested
-async function MODULE_INIT() {
-  console.log('Salon module loaded');
-  
-  // Load all data
-  await loadDashboard();
-  await loadAppointments();
-  await loadOtherPanes();
-  
-  // Real-time updates
-  setupRealtimeUpdates();
-  
-  console.log('Salon module ready');
-}
-
 // ═══════════════════════════════════════════════════════════
+// BIZFLOW SALON - DASHBOARD & APPOINTMENTS
+// All functions in global scope
+// ═══════════════════════════════════════════════════════════
+
 // DASHBOARD
-// ═══════════════════════════════════════════════════════════
-
 async function loadDashboard() {
   try {
     const dashboard = document.getElementById('pane-dashboard');
@@ -63,19 +50,11 @@ async function loadDashboard() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// APPOINTMENTS
-// ═══════════════════════════════════════════════════════════
-
+// APPOINTMENTS - UI
 async function loadAppointments() {
   try {
     const appts = document.getElementById('pane-appointments');
-    if (!appts) {
-      console.log('pane-appointments not found');
-      return;
-    }
-    
-    console.log('Loading appointments page');
+    if (!appts) return;
     
     appts.innerHTML = `
       <div style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px;">
@@ -85,8 +64,8 @@ async function loadAppointments() {
         </div>
         
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <input type="date" id="appt-filter-date" onchange="filterAppointments()" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;outline:none;">
-          <select id="appt-filter-status" onchange="filterAppointments()" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;outline:none;">
+          <input type="date" id="appt-filter-date" onchange="filterAppointments()" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;">
+          <select id="appt-filter-status" onchange="filterAppointments()" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;">
             <option value="">All Status</option>
             <option value="pending">Pending</option>
             <option value="ongoing">Ongoing</option>
@@ -94,7 +73,7 @@ async function loadAppointments() {
           </select>
         </div>
         
-        <div id="appt-modal" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;">
+        <div id="appt-modal" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
           <div style="font-weight:700;margin-bottom:12px;">New Appointment</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
             <input id="appt-client-name" placeholder="Client name" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
@@ -115,13 +94,13 @@ async function loadAppointments() {
       </div>
     `;
     
-    console.log('Appointments HTML set, now rendering');
     await renderAppointments();
   } catch (err) {
     console.error('Load appointments error:', err);
   }
 }
 
+// APPOINTMENTS - RENDER LIST
 async function renderAppointments() {
   try {
     const filterDate = document.getElementById('appt-filter-date')?.value || '';
@@ -135,14 +114,7 @@ async function renderAppointments() {
     if (filterDate) query = query.eq('date', filterDate);
     if (filterStatus) query = query.eq('status', filterStatus);
     
-    const { data: appointments, error } = await query.order('date', { ascending: false });
-    
-    if (error) {
-      console.error('Query error:', error);
-      throw error;
-    }
-    
-    console.log('Appointments loaded:', appointments);
+    const { data: appointments } = await query.order('date', { ascending: false });
     
     const list = document.getElementById('appt-list');
     if (!list) return;
@@ -164,7 +136,7 @@ async function renderAppointments() {
           <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
             <span style="padding:4px 10px;background:${a.status === 'done' ? 'var(--green)' : a.status === 'ongoing' ? 'var(--gold)' : 'var(--border)'};color:#000;border-radius:4px;font-size:11px;font-weight:700;">${a.status}</span>
             ${STATE.userRole === 'owner' ? `
-              <select onchange="updateApptStatus('${a.id}', this.value)" style="padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--txt);font-size:11px;cursor:pointer;">
+              <select onchange="updateApptStatus('${a.id}', this.value)" style="padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--txt);font-size:11px;">
                 <option value="">Status</option>
                 <option value="pending">Pending</option>
                 <option value="ongoing">Ongoing</option>
@@ -180,16 +152,16 @@ async function renderAppointments() {
     list.innerHTML = html;
   } catch (err) {
     console.error('Render appointments error:', err);
-    const list = document.getElementById('appt-list');
-    if (list) list.innerHTML = `<div style="color:var(--red);">Error: ${err.message}</div>`;
   }
 }
 
+// APPOINTMENTS - MODAL ACTIONS
 function openAddApptModal() {
   const modal = document.getElementById('appt-modal');
   if (modal) {
     modal.style.display = 'block';
-    document.getElementById('appt-date').valueAsDate = new Date();
+    const dateInput = document.getElementById('appt-date');
+    if (dateInput) dateInput.valueAsDate = new Date();
   }
 }
 
@@ -275,10 +247,7 @@ function filterAppointments() {
   renderAppointments();
 }
 
-// ═══════════════════════════════════════════════════════════
 // OTHER PANES
-// ═══════════════════════════════════════════════════════════
-
 async function loadOtherPanes() {
   const panes = {
     'pane-staff': '👥 Staff',
@@ -305,10 +274,7 @@ async function loadOtherPanes() {
   });
 }
 
-// ═══════════════════════════════════════════════════════════
-// REAL-TIME
-// ═══════════════════════════════════════════════════════════
-
+// REAL-TIME UPDATES
 function setupRealtimeUpdates() {
   STATE.supabase
     .channel(`salon:${STATE.businessId}`)
@@ -320,16 +286,14 @@ function setupRealtimeUpdates() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// EXPORT FUNCTIONS TO GLOBAL SCOPE
+// MAIN INIT
 // ═══════════════════════════════════════════════════════════
 
-window.openAddApptModal = openAddApptModal;
-window.closeAddApptModal = closeAddApptModal;
-window.saveAppointment = saveAppointment;
-window.updateApptStatus = updateApptStatus;
-window.deleteAppointment = deleteAppointment;
-window.filterAppointments = filterAppointments;
-window.renderAppointments = renderAppointments;
-window.loadDashboard = loadDashboard;
-window.loadAppointments = loadAppointments;
-window.loadOtherPanes = loadOtherPanes;
+async function MODULE_INIT() {
+  console.log('Salon module loaded');
+  await loadDashboard();
+  await loadAppointments();
+  await loadOtherPanes();
+  setupRealtimeUpdates();
+  console.log('Salon module ready');
+}
