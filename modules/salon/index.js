@@ -43,11 +43,11 @@ window.loadAppointments = async function() {
       <div style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <h2 style="font-size:20px;font-weight:800;margin:0;">Appointments</h2>
-          ${STATE.userRole === 'owner' ? '<button onclick="window.openAddApptModal()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">+ New</button>' : ''}
+          ${STATE.userRole === 'owner' ? '<button onclick="window.openAddApptModal && window.openAddApptModal()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">+ New</button>' : ''}
         </div>
         <div style="display:flex;gap:8px;">
-          <input type="date" id="appt-filter-date" onchange="window.filterAppointments()" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;flex:1;">
-          <select id="appt-filter-status" onchange="window.filterAppointments()" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;flex:1;">
+          <input type="date" id="appt-filter-date" onchange="window.filterAppointments && window.filterAppointments()" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;flex:1;">
+          <select id="appt-filter-status" onchange="window.filterAppointments && window.filterAppointments()" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;flex:1;">
             <option value="">All Status</option>
             <option value="pending">Pending</option>
             <option value="ongoing">Ongoing</option>
@@ -64,8 +64,8 @@ window.loadAppointments = async function() {
             <input id="appt-notes" placeholder="Notes" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;grid-column:1/-1;">
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <button onclick="window.saveAppointment()" style="padding:10px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Save</button>
-            <button onclick="window.closeAddApptModal()" style="padding:10px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">Cancel</button>
+            <button onclick="window.saveAppointment && window.saveAppointment()" style="padding:10px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Save</button>
+            <button onclick="window.closeAddApptModal && window.closeAddApptModal()" style="padding:10px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">Cancel</button>
           </div>
         </div>
         <div id="appt-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;"></div>
@@ -103,13 +103,13 @@ window.renderAppointments = async function() {
           <div style="display:flex;flex-direction:column;gap:6px;">
             <span style="padding:4px 10px;background:${a.status === 'done' ? 'var(--green)' : a.status === 'ongoing' ? 'var(--gold)' : 'var(--border)'};color:#000;border-radius:4px;font-size:11px;font-weight:700;">${a.status}</span>
             ${STATE.userRole === 'owner' ? `
-              <select onchange="window.updateApptStatus('${a.id}', this.value)" style="padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--txt);font-size:11px;">
+              <select onchange="window.updateApptStatus && window.updateApptStatus('${a.id}', this.value)" style="padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--txt);font-size:11px;">
                 <option value="">Status</option>
                 <option value="pending">Pending</option>
                 <option value="ongoing">Ongoing</option>
                 <option value="done">Done</option>
               </select>
-              <button onclick="window.deleteAppointment('${a.id}')" style="padding:4px 8px;background:var(--red);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>
+              <button onclick="window.deleteAppointment && window.deleteAppointment('${a.id}')" style="padding:4px 8px;background:var(--red);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>
             ` : ''}
           </div>
         </div>
