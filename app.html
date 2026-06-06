@@ -642,7 +642,7 @@ function showToast(msg) {
 
 async function loadModule(profession) {
   try {
-    const response = await fetch(`modules/${profession}/index-v2.js`);
+    const response = await fetch(`modules/${profession}/index.js`);
     const code = await response.text();
     eval(code);
     if (typeof MODULE_INIT === 'function') MODULE_INIT();
