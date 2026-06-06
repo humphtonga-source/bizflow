@@ -1,35 +1,20 @@
-// ═══════════════════════════════════════════════════════════
-// BIZFLOW SALON - DASHBOARD & APPOINTMENTS
-// All functions in global scope
-// ═══════════════════════════════════════════════════════════
+// BizFlow Salon Module - Dashboard & Appointments
+// All functions are window.functionName for global access
 
-// DASHBOARD
-async function loadDashboard() {
+window.loadDashboard = async function() {
   try {
     const dashboard = document.getElementById('pane-dashboard');
     if (!dashboard) return;
-    
     const today = new Date().toISOString().split('T')[0];
-    
-    const { data: todayAppts } = await STATE.supabase
-      .from('salon_appointments')
-      .select('*')
-      .eq('business_id', STATE.businessId)
-      .eq('date', today);
-    
-    const { data: allStaff } = await STATE.supabase
-      .from('salon_stylists')
-      .select('*')
-      .eq('business_id', STATE.businessId);
-    
+    const { data: todayAppts } = await STATE.supabase.from('salon_appointments').select('*').eq('business_id', STATE.businessId).eq('date', today);
+    const { data: allStaff } = await STATE.supabase.from('salon_stylists').select('*').eq('business_id', STATE.businessId);
     const totalAppts = todayAppts?.length || 0;
     const completedAppts = todayAppts?.filter(a => a.status === 'done').length || 0;
     const totalStaff = allStaff?.length || 0;
-    
     dashboard.innerHTML = `
       <div style="padding:20px;overflow-y:auto;flex:1;">
         <h2 style="margin-bottom:20px;">Dashboard</h2>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
           <div style="background:var(--bg2);padding:16px;border-radius:8px;text-align:center;">
             <div style="font-size:24px;font-weight:800;color:var(--gold);">${totalAppts}</div>
             <div style="font-size:12px;color:var(--txt3);margin-top:6px;">Today</div>
@@ -48,31 +33,27 @@ async function loadDashboard() {
   } catch (err) {
     console.error('Dashboard error:', err);
   }
-}
+};
 
-// APPOINTMENTS - UI
-async function loadAppointments() {
+window.loadAppointments = async function() {
   try {
     const appts = document.getElementById('pane-appointments');
     if (!appts) return;
-    
     appts.innerHTML = `
       <div style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <h2 style="font-size:20px;font-weight:800;margin:0;">Appointments</h2>
-          ${STATE.userRole === 'owner' ? '<button onclick="openAddApptModal()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">+ New</button>' : ''}
+          ${STATE.userRole === 'owner' ? '<button onclick="window.openAddApptModal()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">+ New</button>' : ''}
         </div>
-        
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <input type="date" id="appt-filter-date" onchange="filterAppointments()" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;">
-          <select id="appt-filter-status" onchange="filterAppointments()" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;">
+        <div style="display:flex;gap:8px;">
+          <input type="date" id="appt-filter-date" onchange="window.filterAppointments()" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;flex:1;">
+          <select id="appt-filter-status" onchange="window.filterAppointments()" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;flex:1;">
             <option value="">All Status</option>
             <option value="pending">Pending</option>
             <option value="ongoing">Ongoing</option>
             <option value="done">Done</option>
           </select>
         </div>
-        
         <div id="appt-modal" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
           <div style="font-weight:700;margin-bottom:12px;">New Appointment</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -80,220 +61,151 @@ async function loadAppointments() {
             <input id="appt-client-phone" placeholder="Phone" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
             <input id="appt-date" type="date" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
             <input id="appt-time" type="time" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
-            <input id="appt-notes" placeholder="Notes (optional)" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;grid-column:1/-1;">
+            <input id="appt-notes" placeholder="Notes" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;grid-column:1/-1;">
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <button onclick="saveAppointment()" style="padding:10px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Save</button>
-            <button onclick="closeAddApptModal()" style="padding:10px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">Cancel</button>
+            <button onclick="window.saveAppointment()" style="padding:10px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Save</button>
+            <button onclick="window.closeAddApptModal()" style="padding:10px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">Cancel</button>
           </div>
         </div>
-        
-        <div id="appt-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
-          <div style="color:var(--txt3);text-align:center;padding:40px;">Loading...</div>
-        </div>
+        <div id="appt-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;"></div>
       </div>
     `;
-    
-    await renderAppointments();
+    await window.renderAppointments();
   } catch (err) {
     console.error('Load appointments error:', err);
   }
-}
+};
 
-// APPOINTMENTS - RENDER LIST
-async function renderAppointments() {
+window.renderAppointments = async function() {
   try {
     const filterDate = document.getElementById('appt-filter-date')?.value || '';
     const filterStatus = document.getElementById('appt-filter-status')?.value || '';
-    
-    let query = STATE.supabase
-      .from('salon_appointments')
-      .select('*')
-      .eq('business_id', STATE.businessId);
-    
+    let query = STATE.supabase.from('salon_appointments').select('*').eq('business_id', STATE.businessId);
     if (filterDate) query = query.eq('date', filterDate);
     if (filterStatus) query = query.eq('status', filterStatus);
-    
     const { data: appointments } = await query.order('date', { ascending: false });
-    
     const list = document.getElementById('appt-list');
     if (!list) return;
-    
     if (!appointments || appointments.length === 0) {
       list.innerHTML = '<div style="color:var(--txt3);text-align:center;padding:40px;">No appointments yet</div>';
       return;
     }
-    
     const html = appointments.map(a => `
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:start;gap:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:start;">
           <div style="flex:1;">
-            <div style="font-weight:700;font-size:13px;">${a.client_name}</div>
+            <div style="font-weight:700;">${a.client_name}</div>
             <div style="font-size:12px;color:var(--txt3);margin-top:4px;">📞 ${a.client_phone || 'N/A'}</div>
             <div style="font-size:12px;color:var(--txt3);margin-top:2px;">📅 ${a.date} at ${a.time}</div>
             ${a.notes ? `<div style="font-size:12px;color:var(--txt3);margin-top:2px;">📝 ${a.notes}</div>` : ''}
           </div>
-          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
             <span style="padding:4px 10px;background:${a.status === 'done' ? 'var(--green)' : a.status === 'ongoing' ? 'var(--gold)' : 'var(--border)'};color:#000;border-radius:4px;font-size:11px;font-weight:700;">${a.status}</span>
             ${STATE.userRole === 'owner' ? `
-              <select onchange="updateApptStatus('${a.id}', this.value)" style="padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--txt);font-size:11px;">
+              <select onchange="window.updateApptStatus('${a.id}', this.value)" style="padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--txt);font-size:11px;">
                 <option value="">Status</option>
                 <option value="pending">Pending</option>
                 <option value="ongoing">Ongoing</option>
                 <option value="done">Done</option>
               </select>
-              <button onclick="deleteAppointment('${a.id}')" style="padding:4px 8px;background:var(--red);color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Delete</button>
+              <button onclick="window.deleteAppointment('${a.id}')" style="padding:4px 8px;background:var(--red);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>
             ` : ''}
           </div>
         </div>
       </div>
     `).join('');
-    
     list.innerHTML = html;
   } catch (err) {
-    console.error('Render appointments error:', err);
+    console.error('Render error:', err);
   }
-}
+};
 
-// APPOINTMENTS - MODAL ACTIONS
-function openAddApptModal() {
+window.openAddApptModal = function() {
   const modal = document.getElementById('appt-modal');
   if (modal) {
     modal.style.display = 'block';
     const dateInput = document.getElementById('appt-date');
     if (dateInput) dateInput.valueAsDate = new Date();
   }
-}
+};
 
-function closeAddApptModal() {
+window.closeAddApptModal = function() {
   const modal = document.getElementById('appt-modal');
   if (modal) modal.style.display = 'none';
-}
+};
 
-async function saveAppointment() {
+window.saveAppointment = async function() {
   const name = document.getElementById('appt-client-name')?.value.trim();
   const phone = document.getElementById('appt-client-phone')?.value.trim();
   const date = document.getElementById('appt-date')?.value;
   const time = document.getElementById('appt-time')?.value;
   const notes = document.getElementById('appt-notes')?.value.trim();
-  
-  if (!name || !date || !time) {
-    alert('Fill required fields');
-    return;
-  }
-  
+  if (!name || !date || !time) { alert('Fill required fields'); return; }
   try {
-    const { error } = await STATE.supabase
-      .from('salon_appointments')
-      .insert([{
-        business_id: STATE.businessId,
-        client_name: name,
-        client_phone: phone || '',
-        date,
-        time,
-        notes: notes || '',
-        status: 'pending'
-      }]);
-    
+    const { error } = await STATE.supabase.from('salon_appointments').insert([{
+      business_id: STATE.businessId, client_name: name, client_phone: phone || '', date, time, notes: notes || '', status: 'pending'
+    }]);
     if (error) throw error;
-    
-    closeAddApptModal();
+    window.closeAddApptModal();
     document.getElementById('appt-client-name').value = '';
     document.getElementById('appt-client-phone').value = '';
     document.getElementById('appt-notes').value = '';
-    
-    await renderAppointments();
-    await loadDashboard();
+    await window.renderAppointments();
+    await window.loadDashboard();
   } catch (err) {
     alert('Error: ' + err.message);
   }
-}
+};
 
-async function updateApptStatus(apptId, status) {
+window.updateApptStatus = async function(apptId, status) {
   if (!status) return;
-  
   try {
-    const { error } = await STATE.supabase
-      .from('salon_appointments')
-      .update({ status })
-      .eq('id', apptId);
-    
+    const { error } = await STATE.supabase.from('salon_appointments').update({ status }).eq('id', apptId);
     if (error) throw error;
-    await renderAppointments();
-    await loadDashboard();
+    await window.renderAppointments();
+    await window.loadDashboard();
   } catch (err) {
     alert('Error: ' + err.message);
   }
-}
+};
 
-async function deleteAppointment(apptId) {
+window.deleteAppointment = async function(apptId) {
   if (!confirm('Delete this appointment?')) return;
-  
   try {
-    const { error } = await STATE.supabase
-      .from('salon_appointments')
-      .delete()
-      .eq('id', apptId);
-    
+    const { error } = await STATE.supabase.from('salon_appointments').delete().eq('id', apptId);
     if (error) throw error;
-    await renderAppointments();
-    await loadDashboard();
+    await window.renderAppointments();
+    await window.loadDashboard();
   } catch (err) {
     alert('Error: ' + err.message);
   }
-}
+};
 
-function filterAppointments() {
-  renderAppointments();
-}
+window.filterAppointments = function() {
+  window.renderAppointments();
+};
 
-// OTHER PANES
-async function loadOtherPanes() {
-  const panes = {
-    'pane-staff': '👥 Staff',
-    'pane-services': '✂️ Services',
-    'pane-finance': '💰 Finance',
-    'pane-clients': '👤 Clients',
-    'pane-inventory': '📦 Inventory',
-    'pane-reports': '📊 Reports',
-    'pane-settings': '⚙️ Settings'
-  };
-  
+window.loadOtherPanes = async function() {
+  const panes = { 'pane-staff': '👥 Staff', 'pane-services': '✂️ Services', 'pane-finance': '💰 Finance', 'pane-clients': '👤 Clients', 'pane-inventory': '📦 Inventory', 'pane-reports': '📊 Reports', 'pane-settings': '⚙️ Settings' };
   Object.entries(panes).forEach(([id, title]) => {
     const el = document.getElementById(id);
-    if (el) {
-      el.innerHTML = `
-        <div style="padding:20px;overflow-y:auto;flex:1;">
-          <h2 style="font-size:20px;font-weight:800;margin-bottom:20px;">${title}</h2>
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;text-align:center;color:var(--txt3);">
-            Coming soon...
-          </div>
-        </div>
-      `;
-    }
+    if (el) el.innerHTML = `<div style="padding:20px;"><h2 style="margin-bottom:20px;">${title}</h2><div style="background:var(--bg2);padding:20px;border-radius:8px;text-align:center;color:var(--txt3);">Coming soon...</div></div>`;
   });
-}
+};
 
-// REAL-TIME UPDATES
-function setupRealtimeUpdates() {
-  STATE.supabase
-    .channel(`salon:${STATE.businessId}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'salon_appointments' }, () => {
-      renderAppointments();
-      loadDashboard();
-    })
-    .subscribe();
-}
-
-// ═══════════════════════════════════════════════════════════
-// MAIN INIT
-// ═══════════════════════════════════════════════════════════
+window.setupRealtimeUpdates = function() {
+  STATE.supabase.channel(`salon:${STATE.businessId}`).on('postgres_changes', { event: '*', schema: 'public', table: 'salon_appointments' }, () => {
+    window.renderAppointments();
+    window.loadDashboard();
+  }).subscribe();
+};
 
 async function MODULE_INIT() {
   console.log('Salon module loaded');
-  await loadDashboard();
-  await loadAppointments();
-  await loadOtherPanes();
-  setupRealtimeUpdates();
+  await window.loadDashboard();
+  await window.loadAppointments();
+  await window.loadOtherPanes();
+  window.setupRealtimeUpdates();
   console.log('Salon module ready');
 }
