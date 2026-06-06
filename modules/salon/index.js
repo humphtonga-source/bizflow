@@ -466,4 +466,224 @@ async function loadClients() {
       .order('created_at', { ascending: false });
     
     const html = clients?.length ? clients.map(c => `
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:start;">
+          <div style="flex:1;">
+            <div style="font-weight:700;">👤 ${c.name}</div>
+            <div style="font-size:12px;color:var(--txt3);margin-top:4px;">📞 ${c.phone}</div>
+            <div style="font-size:12px;color:var(--txt3);">✂️ ${c.visits || 0} visits</div>
+            <div style="font-size:12px;color:var(--txt3);">💰 Total: KES ${(c.total_spent || 0).toLocaleString()}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button class="btn-small" onclick="callClient('${c.phone}')">📞 Call</button>
+            <button class="btn-small" onclick="whatsappClient('${c.phone}')">💬 WhatsApp</button>
+          </div>
+        </div>
+      </div>
+    `).join('') : '<div style="color:var(--txt3);text-align:center;padding:20px;">No clients</div>';
+    
+    document.getElementById('client-list').innerHTML = html;
+  } catch (err) {
+    console.error('Clients error:', err);
+  }
+}
+
+async function loadInventory() {
+  try {
+    const { data: items } = await STATE.supabase
+      .from('salon_inventory')
+      .select('*')
+      .eq('business_id', STATE.businessId);
+    
+    const html = items?.length ? items.map(item => {
+      const isLow = item.quantity <= (item.reorder_level || 5);
+      return `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;${isLow ? 'border-left:3px solid var(--red);' : ''}">
+        <div style="display:flex;justify-content:space-between;align-items:start;">
+          <div>
+            <div style="font-weight:700;">📦 ${item.name}</div>
+            <div style="font-size:12px;color:var(--txt3);">Qty: ${item.quantity} ${isLow ? '⚠️ LOW STOCK' : ''}</div>
+            <div style="font-size:12px;color:var(--txt3);">Cost: KES ${item.cost_price}</div>
+          </div>
+          <button class="btn-small" onclick="updateInventory('${item.id}')">Edit</button>
+        </div>
+      </div>
+    `}).join('') : '<div style="color:var(--txt3);text-align:center;padding:20px;">No inventory items</div>';
+    
+    document.getElementById('inventory-list').innerHTML = html;
+  } catch (err) {
+    console.error('Inventory error:', err);
+  }
+}
+
+async function loadReports() {
+  try {
+    const { data: appts } = await STATE.supabase
+      .from('salon_appointments')
+      .select('stylist_id, status, salon_stylists(name)')
+      .eq('business_id', STATE.businessId)
+      .eq('status', 'done');
+    
+    const { data: finance } = await STATE.supabase
+      .from('salon_finance')
+      .select('*')
+      .eq('business_id', STATE.businessId);
+    
+    // Best stylists
+    const stylistCounts = {};
+    appts?.forEach(a => {
+      const name = a.salon_stylists?.name || 'Unknown';
+      stylistCounts[name] = (stylistCounts[name] || 0) + 1;
+    });
+    
+    const topStylists = Object.entries(stylistCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    
+    const reportsHTML = `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px;">🏆 Top Performing Stylists</div>
+        ${topStylists.map(([name, count]) => `
+          <div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid var(--border);">
+            <div>${name}</div>
+            <div style="font-weight:700;">${count} appointments</div>
+          </div>
+        `).join('')}
+      </div>
+      
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px;">📊 Financial Summary</div>
+        <div style="padding:8px;border-bottom:1px solid var(--border);">
+          <strong>Total Income:</strong> KES ${(finance?.filter(f => f.type === 'income').reduce((sum, f) => sum + f.amount, 0) || 0).toLocaleString()}
+        </div>
+        <div style="padding:8px;">
+          <strong>Total Expenses:</strong> KES ${(finance?.filter(f => f.type === 'expense').reduce((sum, f) => sum + f.amount, 0) || 0).toLocaleString()}
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('reports-content').innerHTML = reportsHTML;
+  } catch (err) {
+    console.error('Reports error:', err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODALS & ACTIONS
+// ═══════════════════════════════════════════════════════════
+
+function openAppointmentModal() {
+  alert('Appointment form will open here');
+  // TODO: Implement appointment form modal
+}
+
+function openStaffModal() {
+  alert('Staff form will open here');
+  // TODO: Implement staff form modal
+}
+
+function openServiceModal() {
+  alert('Service form will open here');
+  // TODO: Implement service form modal
+}
+
+function openFinanceModal() {
+  alert('Finance form will open here');
+  // TODO: Implement finance form modal
+}
+
+function openClientModal() {
+  alert('Client form will open here');
+  // TODO: Implement client form modal
+}
+
+function openInventoryModal() {
+  alert('Inventory form will open here');
+  // TODO: Implement inventory form modal
+}
+
+function updateApptStatus(apptId, status) {
+  STATE.supabase
+    .from('salon_appointments')
+    .update({ status })
+    .eq('id', apptId)
+    .then(() => {
+      loadAppointments();
+      loadDashboard();
+    });
+}
+
+function deleteStaff(staffId) {
+  if (!confirm('Delete staff member?')) return;
+  STATE.supabase
+    .from('salon_stylists')
+    .delete()
+    .eq('id', staffId)
+    .then(() => loadStaff());
+}
+
+function deleteService(serviceId) {
+  if (!confirm('Delete service?')) return;
+  STATE.supabase
+    .from('salon_services')
+    .delete()
+    .eq('id', serviceId)
+    .then(() => loadServices());
+}
+
+function callClient(phone) {
+  window.location.href = `tel:${phone}`;
+}
+
+function whatsappClient(phone) {
+  window.open(`https://wa.me/${phone.replace(/[^\d]/g, '')}`, '_blank');
+}
+
+function filterAppointments() {
+  loadAppointments();
+}
+
+function filterClients() {
+  const search = document.getElementById('client-search').value.toLowerCase();
+  const items = document.getElementById('client-list').children;
+  Array.from(items).forEach(item => {
+    item.style.display = item.textContent.toLowerCase().includes(search) ? '' : 'none';
+  });
+}
+
+async function saveSettings() {
+  const name = document.getElementById('set-name').value;
+  const email = document.getElementById('set-email').value;
+  const phone = document.getElementById('set-phone').value;
+  const address = document.getElementById('set-address').value;
+  
+  await STATE.supabase
+    .from('businesses')
+    .update({ name, email, phone, address })
+    .eq('id', STATE.businessId);
+  
+  alert('Settings saved');
+}
+
+async function addShop() {
+  const name = document.getElementById('shop-name').value;
+  const location = document.getElementById('shop-location').value;
+  
+  if (!name || !location) {
+    alert('Fill all fields');
+    return;
+  }
+  
+  // TODO: Implement shop creation
+  alert('Shop added successfully');
+}
+
+function setupRealtimeUpdates() {
+  STATE.supabase
+    .channel(`salon:${STATE.businessId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'salon_appointments' }, () => {
+      loadAppointments();
+      loadDashboard();
+    })
+    .subscribe();
+}
