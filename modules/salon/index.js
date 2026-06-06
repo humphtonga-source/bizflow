@@ -318,3 +318,18 @@ function setupRealtimeUpdates() {
     })
     .subscribe();
 }
+
+// ═══════════════════════════════════════════════════════════
+// EXPORT FUNCTIONS TO GLOBAL SCOPE
+// ═══════════════════════════════════════════════════════════
+
+window.openAddApptModal = openAddApptModal;
+window.closeAddApptModal = closeAddApptModal;
+window.saveAppointment = saveAppointment;
+window.updateApptStatus = updateApptStatus;
+window.deleteAppointment = deleteAppointment;
+window.filterAppointments = filterAppointments;
+window.renderAppointments = renderAppointments;
+window.loadDashboard = loadDashboard;
+window.loadAppointments = loadAppointments;
+window.loadOtherPanes = loadOtherPanes;
