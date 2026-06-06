@@ -1,32 +1,37 @@
 // ═══════════════════════════════════════════════════════════
-// SALON MODULE
+// SALON MODULE v2 — IMPROVED
 // ═══════════════════════════════════════════════════════════
 
 async function MODULE_INIT() {
-  // Build HTML
   buildSalonHTML();
   
-  // Build nav
-  buildNavMenu([
+  // Role-based nav
+  let navModules = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'appointments', label: 'Appointments', icon: '📅' },
-    { id: 'stylists', label: 'Stylists', icon: '👩' },
+    { id: 'stylists', label: 'Staff', icon: '👩' },
     { id: 'services', label: 'Services', icon: '✂️' },
-    { id: 'clients', label: 'Clients', icon: '👥' },
     { id: 'finance', label: 'Finance', icon: '💰' },
-    { id: 'inventory', label: 'Stock', icon: '📦' },
-    { id: 'reports', label: 'Reports', icon: '📈' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' }
-  ]);
+  ];
   
-  // Load data
+  // Only owner sees inventory + clients + reports + settings
+  if (STATE.userRole === 'owner') {
+    navModules.push(
+      { id: 'clients', label: 'Clients', icon: '👥' },
+      { id: 'inventory', label: 'Stock', icon: '📦' },
+      { id: 'reports', label: 'Reports', icon: '📈' },
+      { id: 'settings', label: 'Settings', icon: '⚙️' }
+    );
+  }
+  
+  buildNavMenu(navModules);
+  
   await loadDashboard();
   await loadStylists();
   await loadServices();
-  await loadClients();
-  await renderAppointments();
+  await loadAppointments();
+  await loadFinance();
   
-  // Setup realtime
   setupRealtimeSubscriptions();
 }
 
@@ -38,45 +43,40 @@ function buildSalonHTML() {
   content.innerHTML = `
     <!-- DASHBOARD -->
     <div class="section active" id="sec-dashboard">
-      <div style="margin-bottom:20px;">
-        <h1 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:4px;">Welcome back</h1>
-        <p style="font-size:13px;color:var(--muted);">Here's your salon overview</p>
+      <div class="page-header">
+        <div>
+          <h1>Dashboard</h1>
+          <p class="page-sub">Your salon at a glance</p>
+        </div>
       </div>
+      
       <div class="stat-grid" id="dash-stats"></div>
-      <div style="background:var(--black2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Today's Appointments</h3>
-        <div id="dash-today-appts"></div>
+      
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Today's Schedule</div>
+          <div id="dash-today-appts" class="card-content"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Recent Activity</div>
+          <div id="dash-activity" class="card-content"></div>
+        </div>
       </div>
     </div>
 
     <!-- APPOINTMENTS -->
     <div class="section" id="sec-appointments">
-      <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="page-header">
         <div>
-          <h1 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:4px;">Appointments</h1>
-          <p style="font-size:13px;color:var(--muted);" id="appt-date-lbl"></p>
+          <h1>Appointments</h1>
+          <p class="page-sub" id="appt-date-lbl"></p>
         </div>
-        <button class="btn btn-gold" style="padding:10px 16px;" onclick="toggleAddApptForm()">+ New</button>
+        <button class="btn btn-gold" onclick="openApptForm()">+ New</button>
       </div>
       
-      <div id="add-appt-form" style="display:none;background:var(--black2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">New Appointment</h3>
-        <input class="input" id="a-client" placeholder="Client name">
-        <input class="input" id="a-phone" type="tel" placeholder="Phone">
-        <select class="input" id="a-service"></select>
-        <select class="input" id="a-stylist"></select>
-        <input class="input" id="a-date" type="date">
-        <input class="input" id="a-time" type="time">
-        <input class="input" id="a-notes" placeholder="Notes">
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-gold" style="flex:1;" onclick="saveAppointment()">Save</button>
-          <button class="btn btn-cancel" style="flex:1;" onclick="toggleAddApptForm()">Cancel</button>
-        </div>
-      </div>
-      
-      <div style="display:flex;gap:8px;margin-bottom:16px;">
-        <input class="input" id="appt-filter-date" type="date" style="flex:1;margin-bottom:0;" onchange="renderAppointments()">
-        <select class="input" id="appt-filter-status" style="width:140px;margin-bottom:0;" onchange="renderAppointments()">
+      <div class="filters">
+        <input class="input" id="appt-filter-date" type="date" onchange="renderAppointments()" placeholder="Filter by date">
+        <select class="input" id="appt-filter-status" onchange="renderAppointments()">
           <option value="">All Status</option>
           <option value="pending">Pending</option>
           <option value="done">Done</option>
@@ -84,27 +84,47 @@ function buildSalonHTML() {
         </select>
       </div>
       
+      <div id="appt-form" class="card" style="display:none;margin-bottom:20px;">
+        <div class="card-title">New Appointment</div>
+        <div class="form-grid">
+          <input class="input" id="a-client" placeholder="Client name">
+          <input class="input" id="a-phone" type="tel" placeholder="Phone">
+          <select class="input" id="a-service"></select>
+          <select class="input" id="a-stylist"></select>
+          <input class="input" id="a-date" type="date">
+          <input class="input" id="a-time" type="time">
+          <textarea class="input" id="a-notes" placeholder="Notes" style="grid-column:1/-1;"></textarea>
+          <div style="display:flex;gap:8px;grid-column:1/-1;">
+            <button class="btn btn-gold" style="flex:1;" onclick="saveAppointment()">Save</button>
+            <button class="btn btn-cancel" style="flex:1;" onclick="closeApptForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+      
       <div id="appt-list"></div>
     </div>
 
     <!-- STYLISTS -->
     <div class="section" id="sec-stylists">
-      <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="page-header">
         <div>
-          <h1 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:4px;">Stylists</h1>
-          <p style="font-size:13px;color:var(--muted);">Manage your team</p>
+          <h1>Staff</h1>
+          <p class="page-sub">Manage your team</p>
         </div>
-        <button class="btn btn-gold" style="padding:10px 16px;" onclick="toggleAddStylistForm()">+ Add</button>
+        ${STATE.userRole === 'owner' ? '<button class="btn btn-gold" onclick="openStylistForm()">+ Add Staff</button>' : ''}
       </div>
       
-      <div id="add-stylist-form" style="display:none;background:var(--black2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">New Stylist</h3>
-        <input class="input" id="s-name" placeholder="Name">
-        <input class="input" id="s-phone" type="tel" placeholder="Phone">
-        <input class="input" id="s-commission" type="number" placeholder="Commission %">
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-gold" style="flex:1;" onclick="saveStylist()">Save</button>
-          <button class="btn btn-cancel" style="flex:1;" onclick="toggleAddStylistForm()">Cancel</button>
+      <div id="stylist-form" class="card" style="display:none;margin-bottom:20px;">
+        <div class="card-title">Add Staff Member</div>
+        <div class="form-grid">
+          <input class="input" id="s-name" placeholder="Name">
+          <input class="input" id="s-email" type="email" placeholder="Email">
+          <input class="input" id="s-phone" type="tel" placeholder="Phone">
+          <input class="input" id="s-commission" type="number" placeholder="Commission %" min="0" max="100">
+          <div style="display:flex;gap:8px;grid-column:1/-1;">
+            <button class="btn btn-gold" style="flex:1;" onclick="saveStylist()">Save</button>
+            <button class="btn btn-cancel" style="flex:1;" onclick="closeStylistForm()">Cancel</button>
+          </div>
         </div>
       </div>
       
@@ -113,102 +133,138 @@ function buildSalonHTML() {
 
     <!-- SERVICES -->
     <div class="section" id="sec-services">
-      <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="page-header">
         <div>
-          <h1 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:4px;">Services</h1>
-          <p style="font-size:13px;color:var(--muted);">Manage your offerings</p>
+          <h1>Services</h1>
+          <p class="page-sub">Manage your offerings</p>
         </div>
-        <button class="btn btn-gold" style="padding:10px 16px;" onclick="toggleAddServiceForm()">+ Add</button>
+        ${STATE.userRole === 'owner' ? '<button class="btn btn-gold" onclick="openServiceForm()">+ Add Service</button>' : ''}
       </div>
       
-      <div id="add-service-form" style="display:none;background:var(--black2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">New Service</h3>
-        <input class="input" id="svc-name" placeholder="Service name">
-        <input class="input" id="svc-price" type="number" placeholder="Price" step="0.01">
-        <input class="input" id="svc-duration" type="number" placeholder="Duration (mins)">
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-gold" style="flex:1;" onclick="saveService()">Save</button>
-          <button class="btn btn-cancel" style="flex:1;" onclick="toggleAddServiceForm()">Cancel</button>
+      <div id="service-form" class="card" style="display:none;margin-bottom:20px;">
+        <div class="card-title">New Service</div>
+        <div class="form-grid">
+          <input class="input" id="svc-name" placeholder="Service name">
+          <input class="input" id="svc-price" type="number" placeholder="Price" step="0.01">
+          <input class="input" id="svc-duration" type="number" placeholder="Duration (mins)">
+          <textarea class="input" id="svc-desc" placeholder="Description" style="grid-column:1/-1;"></textarea>
+          <div style="display:flex;gap:8px;grid-column:1/-1;">
+            <button class="btn btn-gold" style="flex:1;" onclick="saveService()">Save</button>
+            <button class="btn btn-cancel" style="flex:1;" onclick="closeServiceForm()">Cancel</button>
+          </div>
         </div>
       </div>
       
       <div id="service-list"></div>
     </div>
 
-    <!-- CLIENTS -->
-    <div class="section" id="sec-clients">
-      <div style="margin-bottom:20px;">
-        <h1 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:4px;">Clients</h1>
-        <p style="font-size:13px;color:var(--muted);">Manage your customer base</p>
-      </div>
-      
-      <input class="input" id="client-search" placeholder="Search clients..." onkeyup="renderClients()">
-      
-      <div id="client-list"></div>
-    </div>
-
     <!-- FINANCE -->
     <div class="section" id="sec-finance">
-      <div style="margin-bottom:20px;">
-        <h1 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:4px;">Finance</h1>
-        <p style="font-size:13px;color:var(--muted);">Revenue and transactions</p>
+      <div class="page-header">
+        <div>
+          <h1>Finance</h1>
+          <p class="page-sub">Revenue & expenses</p>
+        </div>
+        <button class="btn btn-gold" onclick="openFinanceForm()">+ Record</button>
       </div>
       
       <div class="stat-grid" id="finance-stats"></div>
       
-      <div style="background:var(--black2);border:1px solid var(--border);border-radius:14px;padding:20px;">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Recent Transactions</h3>
-        <div id="finance-list"></div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Add Transaction</div>
+          <div id="finance-form" style="display:none;">
+            <div class="form-grid">
+              <select class="input" id="f-type">
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+              <input class="input" id="f-amount" type="number" placeholder="Amount" step="0.01">
+              <input class="input" id="f-category" placeholder="Category (e.g. Service, Supplies)">
+              <input class="input" id="f-desc" placeholder="Description">
+              <div style="display:flex;gap:8px;grid-column:1/-1;">
+                <button class="btn btn-gold" style="flex:1;" onclick="saveFinanceRecord()">Save</button>
+                <button class="btn btn-cancel" style="flex:1;" onclick="closeFinanceForm()">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title">Recent Transactions</div>
+          <div id="finance-list" class="card-content"></div>
+        </div>
       </div>
     </div>
 
-    <!-- INVENTORY -->
-    <div class="section" id="sec-inventory">
-      <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+    <!-- CLIENTS (Owner only) -->
+    <div class="section" id="sec-clients" style="display:${STATE.userRole === 'owner' ? 'block' : 'none'};">
+      <div class="page-header">
         <div>
-          <h1 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:4px;">Stock</h1>
-          <p style="font-size:13px;color:var(--muted);">Manage inventory</p>
+          <h1>Clients</h1>
+          <p class="page-sub">Customer database</p>
         </div>
-        <button class="btn btn-gold" style="padding:10px 16px;" onclick="toggleAddItemForm()">+ Add</button>
       </div>
       
-      <div id="add-item-form" style="display:none;background:var(--black2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">New Item</h3>
-        <input class="input" id="inv-name" placeholder="Item name">
-        <input class="input" id="inv-qty" type="number" placeholder="Quantity">
-        <input class="input" id="inv-cost" type="number" placeholder="Cost price" step="0.01">
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-gold" style="flex:1;" onclick="saveInventoryItem()">Save</button>
-          <button class="btn btn-cancel" style="flex:1;" onclick="toggleAddItemForm()">Cancel</button>
+      <input class="input" id="client-search" placeholder="Search clients..." onkeyup="renderClients()" style="margin-bottom:20px;">
+      <div id="client-list"></div>
+    </div>
+
+    <!-- INVENTORY (Owner only) -->
+    <div class="section" id="sec-inventory" style="display:${STATE.userRole === 'owner' ? 'block' : 'none'};">
+      <div class="page-header">
+        <div>
+          <h1>Stock</h1>
+          <p class="page-sub">Manage inventory</p>
+        </div>
+        <button class="btn btn-gold" onclick="openInventoryForm()">+ Add Item</button>
+      </div>
+      
+      <div id="inventory-form" class="card" style="display:none;margin-bottom:20px;">
+        <div class="card-title">New Item</div>
+        <div class="form-grid">
+          <input class="input" id="inv-name" placeholder="Item name">
+          <input class="input" id="inv-qty" type="number" placeholder="Quantity">
+          <input class="input" id="inv-cost" type="number" placeholder="Cost price" step="0.01">
+          <div style="display:flex;gap:8px;grid-column:1/-1;">
+            <button class="btn btn-gold" style="flex:1;" onclick="saveInventory()">Save</button>
+            <button class="btn btn-cancel" style="flex:1;" onclick="closeInventoryForm()">Cancel</button>
+          </div>
         </div>
       </div>
       
       <div id="inventory-list"></div>
     </div>
 
-    <!-- REPORTS -->
-    <div class="section" id="sec-reports">
-      <div style="margin-bottom:20px;">
-        <h1 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:4px;">Reports</h1>
-        <p style="font-size:13px;color:var(--muted);">Business analytics</p>
+    <!-- REPORTS (Owner only) -->
+    <div class="section" id="sec-reports" style="display:${STATE.userRole === 'owner' ? 'block' : 'none'};">
+      <div class="page-header">
+        <div>
+          <h1>Reports</h1>
+          <p class="page-sub">Business analytics</p>
+        </div>
       </div>
-      
       <div id="reports-content"></div>
     </div>
 
-    <!-- SETTINGS -->
-    <div class="section" id="sec-settings">
-      <div style="margin-bottom:20px;">
-        <h1 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:4px;">Settings</h1>
-        <p style="font-size:13px;color:var(--muted);">Business configuration</p>
+    <!-- SETTINGS (Owner only) -->
+    <div class="section" id="sec-settings" style="display:${STATE.userRole === 'owner' ? 'block' : 'none'};">
+      <div class="page-header">
+        <div>
+          <h1>Settings</h1>
+          <p class="page-sub">Business configuration</p>
+        </div>
       </div>
       
-      <div style="background:var(--black2);border:1px solid var(--border);border-radius:14px;padding:20px;">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Business Info</h3>
-        <input class="input" id="set-name" placeholder="Business name">
-        <input class="input" id="set-email" type="email" placeholder="Email">
-        <input class="input" id="set-phone" type="tel" placeholder="Phone">
-        <button class="btn btn-gold" style="width:100%;margin-top:16px;" onclick="saveSettings()">Save Changes</button>
+      <div class="card" style="max-width:600px;">
+        <div class="card-title">Business Info</div>
+        <div class="form-grid">
+          <input class="input" id="set-name" placeholder="Business name">
+          <input class="input" id="set-email" type="email" placeholder="Email">
+          <input class="input" id="set-phone" type="tel" placeholder="Phone">
+          <input class="input" id="set-address" placeholder="Address" style="grid-column:1/-1;">
+          <button class="btn btn-gold" style="grid-column:1/-1;" onclick="saveSettings()">Save Changes</button>
+        </div>
       </div>
     </div>
   `;
@@ -219,82 +275,104 @@ function buildSalonHTML() {
 // ═══════════════════════════════════════════════════════════
 async function loadDashboard() {
   try {
-    // Get stats
+    const today = new Date().toISOString().split('T')[0];
+    
     const { data: appts } = await STATE.supabase
       .from('salon_appointments')
       .select('*')
-      .eq('business_id', STATE.businessId);
+      .eq('business_id', STATE.businessId)
+      .eq('date', today);
     
     const { data: stylists } = await STATE.supabase
       .from('salon_stylists')
       .select('*')
       .eq('business_id', STATE.businessId);
     
-    const { data: clients } = await STATE.supabase
-      .from('salon_clients')
+    const { data: finance } = await STATE.supabase
+      .from('salon_finance')
       .select('*')
-      .eq('business_id', STATE.businessId);
+      .eq('business_id', STATE.businessId)
+      .eq('type', 'income');
     
-    const todayAppts = appts?.filter(a => {
-      const apptDate = new Date(a.date).toDateString();
-      const today = new Date().toDateString();
-      return apptDate === today;
-    }) || [];
+    const totalRevenue = finance?.reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
     
-    // Render stats
+    // Stats cards
     const statsHtml = `
       <div class="stat-card">
+        <div class="stat-icon">💰</div>
         <div class="stat-label">Today's Revenue</div>
-        <div class="stat-value" style="color:var(--green);">KES ${(todayAppts.length * 500).toLocaleString()}</div>
-        <div class="stat-sub">${todayAppts.length} appointments</div>
+        <div class="stat-value">KES ${totalRevenue.toLocaleString()}</div>
+        <div class="stat-sub">${appts?.length || 0} appointments</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Total Clients</div>
-        <div class="stat-value">${clients?.length || 0}</div>
-        <div class="stat-sub">Active customers</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Stylists</div>
+        <div class="stat-icon">👩</div>
+        <div class="stat-label">Staff</div>
         <div class="stat-value">${stylists?.length || 0}</div>
-        <div class="stat-sub">Team members</div>
+        <div class="stat-sub">Active members</div>
       </div>
       <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-label">Today's Appts</div>
+        <div class="stat-value">${appts?.length || 0}</div>
+        <div class="stat-sub">Scheduled</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⭐</div>
         <div class="stat-label">Avg Rating</div>
         <div class="stat-value">4.8</div>
-        <div class="stat-sub">From 120 reviews</div>
+        <div class="stat-sub">From reviews</div>
       </div>
     `;
     document.getElementById('dash-stats').innerHTML = statsHtml;
     
-    // Render today's appointments
-    const todayApptHtml = todayAppts.length ? todayAppts.map(a => `
-      <div style="background:var(--black3);border-left:3px solid var(--gold);padding:12px;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;">
-        <div>
-          <div style="font-size:14px;font-weight:600;">${a.client_name}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">${new Date(a.date + ' ' + a.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+    // Today's appointments
+    const apptHtml = appts?.length ? appts.map(a => `
+      <div class="appt-item">
+        <div class="appt-time">${a.time}</div>
+        <div class="appt-details">
+          <div class="appt-name">${a.client_name}</div>
+          <div class="appt-phone">${a.client_phone}</div>
         </div>
-        <div style="font-size:12px;background:var(--goldl);color:var(--gold);padding:4px 8px;border-radius:6px;height:fit-content;">${a.status || 'pending'}</div>
+        <div class="appt-status ${a.status}">${a.status}</div>
       </div>
-    `).join('') : '<p style="color:var(--muted);font-size:13px;">No appointments today</p>';
+    `).join('') : '<p class="empty">No appointments today</p>';
     
-    document.getElementById('dash-today-appts').innerHTML = todayApptHtml;
+    document.getElementById('dash-today-appts').innerHTML = apptHtml;
     
-    document.getElementById('appt-date-lbl').textContent = new Date().toLocaleDateString();
+    // Activity
+    const activityHtml = `
+      <div class="activity-item">
+        <div class="activity-icon">✂️</div>
+        <div class="activity-text">
+          <div class="activity-title">Salon Active</div>
+          <div class="activity-time">Now</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-icon">👩</div>
+        <div class="activity-text">
+          <div class="activity-title">${stylists?.length || 0} staff members</div>
+          <div class="activity-time">On board</div>
+        </div>
+      </div>
+    `;
+    document.getElementById('dash-activity').innerHTML = activityHtml;
   } catch (err) {
     console.error('Dashboard error:', err);
-    showToast('Failed to load dashboard', 'error');
   }
 }
 
 // ═══════════════════════════════════════════════════════════
 // APPOINTMENTS
 // ═══════════════════════════════════════════════════════════
-function toggleAddApptForm() {
-  const form = document.getElementById('add-appt-form');
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
-  if (form.style.display === 'block') {
-    document.getElementById('a-date').valueAsDate = new Date();
-  }
+function openApptForm() {
+  document.getElementById('appt-form').style.display = 'block';
+  document.getElementById('a-date').valueAsDate = new Date();
+  closeMenuOnMobile();
+}
+
+function closeApptForm() {
+  document.getElementById('appt-form').style.display = 'none';
 }
 
 async function saveAppointment() {
@@ -304,10 +382,9 @@ async function saveAppointment() {
   const stylistId = document.getElementById('a-stylist').value;
   const date = document.getElementById('a-date').value;
   const time = document.getElementById('a-time').value;
-  const notes = document.getElementById('a-notes').value.trim();
   
-  if (!clientName || !date || !time || !serviceId || !stylistId) {
-    showToast('Please fill all required fields', 'error');
+  if (!clientName || !date || !time) {
+    showToast('Fill all required fields', 'error');
     return;
   }
   
@@ -320,16 +397,15 @@ async function saveAppointment() {
         client_phone: phone,
         service_id: serviceId,
         stylist_id: stylistId,
-        date: date,
-        time: time,
-        notes: notes,
+        date,
+        time,
         status: 'pending',
         created_at: new Date()
       }]);
     
     if (error) throw error;
     showToast('Appointment created');
-    toggleAddApptForm();
+    closeApptForm();
     await renderAppointments();
   } catch (err) {
     showToast(err.message, 'error');
@@ -349,23 +425,21 @@ async function renderAppointments() {
     if (filterDate) query = query.eq('date', filterDate);
     if (filterStatus) query = query.eq('status', filterStatus);
     
-    const { data: appts, error } = await query.order('time', { ascending: true });
-    
-    if (error) throw error;
+    const { data: appts } = await query.order('date', { ascending: false });
     
     const html = appts?.length ? appts.map(a => `
-      <div style="background:var(--black2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-start;">
-        <div style="flex:1;">
-          <div style="font-size:14px;font-weight:600;">${a.client_name}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">📅 ${a.date} at ${a.time}</div>
-          <div style="font-size:12px;color:var(--muted);">📞 ${a.client_phone}</div>
+      <div class="appt-card">
+        <div class="appt-card-left">
+          <div class="appt-card-name">${a.client_name}</div>
+          <div class="appt-card-details">📅 ${a.date} at ${a.time}</div>
+          <div class="appt-card-details">📞 ${a.client_phone}</div>
         </div>
-        <div style="text-align:right;">
-          <div style="display:inline-block;background:${a.status === 'done' ? 'var(--greenl)' : a.status === 'cancelled' ? 'var(--redl)' : 'var(--goldl)'};color:${a.status === 'done' ? 'var(--green)' : a.status === 'cancelled' ? 'var(--red)' : 'var(--gold)'};padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;margin-bottom:8px;">${a.status}</div>
-          <button class="btn btn-sm" style="width:100%;background:var(--black3);border:1px solid var(--border);color:var(--muted);padding:4px 8px;font-size:11px;margin-top:4px;" onclick="updateApptStatus('${a.id}', 'done')">Mark Done</button>
+        <div class="appt-card-right">
+          <div class="badge ${a.status}">${a.status}</div>
+          <button class="btn-small" onclick="updateApptStatus('${a.id}', 'done')">Done</button>
         </div>
       </div>
-    `).join('') : '<p style="color:var(--muted);font-size:13px;">No appointments</p>';
+    `).join('') : '<p class="empty">No appointments</p>';
     
     document.getElementById('appt-list').innerHTML = html;
   } catch (err) {
@@ -381,7 +455,6 @@ async function updateApptStatus(apptId, status) {
       .eq('id', apptId);
     
     if (error) throw error;
-    showToast('Appointment updated');
     await renderAppointments();
   } catch (err) {
     showToast(err.message, 'error');
@@ -391,30 +464,34 @@ async function updateApptStatus(apptId, status) {
 // ═══════════════════════════════════════════════════════════
 // STYLISTS
 // ═══════════════════════════════════════════════════════════
-function toggleAddStylistForm() {
-  const form = document.getElementById('add-stylist-form');
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+function openStylistForm() {
+  document.getElementById('stylist-form').style.display = 'block';
+  closeMenuOnMobile();
+}
+
+function closeStylistForm() {
+  document.getElementById('stylist-form').style.display = 'none';
 }
 
 async function loadStylists() {
   try {
-    const { data: stylists, error } = await STATE.supabase
+    const { data: stylists } = await STATE.supabase
       .from('salon_stylists')
       .select('*')
       .eq('business_id', STATE.businessId);
     
-    if (error) throw error;
-    
     const html = stylists?.length ? stylists.map(s => `
-      <div style="background:var(--black2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-size:14px;font-weight:600;">${s.name}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">${s.phone}</div>
-          <div style="font-size:12px;color:var(--gold);margin-top:2px;">${s.commission}% commission</div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:start;">
+          <div>
+            <div class="card-title">${s.name}</div>
+            <div class="card-sub">📞 ${s.phone}</div>
+            <div class="card-sub">💼 ${s.commission}% commission</div>
+          </div>
+          ${STATE.userRole === 'owner' ? `<button class="btn-sm" onclick="deleteStylist('${s.id}')">Remove</button>` : ''}
         </div>
-        <button class="btn btn-red" style="padding:6px 12px;font-size:12px;" onclick="deleteStylist('${s.id}')">Remove</button>
       </div>
-    `).join('') : '<p style="color:var(--muted);font-size:13px;">No stylists added</p>';
+    `).join('') : '<p class="empty">No stylists added</p>';
     
     document.getElementById('stylist-list').innerHTML = html;
   } catch (err) {
@@ -424,11 +501,12 @@ async function loadStylists() {
 
 async function saveStylist() {
   const name = document.getElementById('s-name').value.trim();
+  const email = document.getElementById('s-email').value.trim();
   const phone = document.getElementById('s-phone').value.trim();
-  const commission = parseFloat(document.getElementById('s-commission').value);
+  const commission = parseFloat(document.getElementById('s-commission').value) || 0;
   
-  if (!name || !phone || isNaN(commission)) {
-    showToast('Please fill all fields', 'error');
+  if (!name || !email) {
+    showToast('Name and email required', 'error');
     return;
   }
   
@@ -438,25 +516,27 @@ async function saveStylist() {
       .insert([{
         business_id: STATE.businessId,
         name,
+        email,
         phone,
         commission,
         created_at: new Date()
       }]);
     
     if (error) throw error;
-    showToast('Stylist added');
-    toggleAddStylistForm();
-    await loadStylists();
+    showToast('Staff member added');
+    closeStylistForm();
     document.getElementById('s-name').value = '';
+    document.getElementById('s-email').value = '';
     document.getElementById('s-phone').value = '';
     document.getElementById('s-commission').value = '';
+    await loadStylists();
   } catch (err) {
     showToast(err.message, 'error');
   }
 }
 
 async function deleteStylist(stylistId) {
-  if (!confirm('Remove this stylist?')) return;
+  if (!confirm('Remove this staff member?')) return;
   
   try {
     const { error } = await STATE.supabase
@@ -465,7 +545,6 @@ async function deleteStylist(stylistId) {
       .eq('id', stylistId);
     
     if (error) throw error;
-    showToast('Stylist removed');
     await loadStylists();
   } catch (err) {
     showToast(err.message, 'error');
@@ -475,37 +554,41 @@ async function deleteStylist(stylistId) {
 // ═══════════════════════════════════════════════════════════
 // SERVICES
 // ═══════════════════════════════════════════════════════════
-function toggleAddServiceForm() {
-  const form = document.getElementById('add-service-form');
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+function openServiceForm() {
+  document.getElementById('service-form').style.display = 'block';
+  closeMenuOnMobile();
+}
+
+function closeServiceForm() {
+  document.getElementById('service-form').style.display = 'none';
 }
 
 async function loadServices() {
   try {
-    const { data: services, error } = await STATE.supabase
+    const { data: services } = await STATE.supabase
       .from('salon_services')
       .select('*')
       .eq('business_id', STATE.businessId);
     
-    if (error) throw error;
-    
-    // Populate service dropdowns
+    // Populate dropdowns
     const opts = services?.map(s => `<option value="${s.id}">${s.name} (KES ${s.price})</option>`).join('') || '';
     document.getElementById('a-service').innerHTML = '<option value="">Select service</option>' + opts;
     
-    // Render service list
+    // Render services
     const html = services?.length ? services.map(s => `
-      <div style="background:var(--black2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-size:14px;font-weight:600;">${s.name}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">${s.duration} mins</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:16px;font-weight:700;color:var(--gold);">KES ${s.price}</div>
-          <button class="btn btn-red" style="padding:6px 12px;font-size:12px;margin-top:8px;" onclick="deleteService('${s.id}')">Delete</button>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:start;">
+          <div>
+            <div class="card-title">${s.name}</div>
+            <div class="card-sub">⏱️ ${s.duration} minutes</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:18px;font-weight:700;color:var(--gold);">KES ${s.price}</div>
+            ${STATE.userRole === 'owner' ? `<button class="btn-sm" style="margin-top:8px;" onclick="deleteService('${s.id}')">Delete</button>` : ''}
+          </div>
         </div>
       </div>
-    `).join('') : '<p style="color:var(--muted);font-size:13px;">No services added</p>';
+    `).join('') : '<p class="empty">No services added</p>';
     
     document.getElementById('service-list').innerHTML = html;
   } catch (err) {
@@ -519,7 +602,7 @@ async function saveService() {
   const duration = parseInt(document.getElementById('svc-duration').value);
   
   if (!name || isNaN(price) || isNaN(duration)) {
-    showToast('Please fill all fields', 'error');
+    showToast('Fill all fields', 'error');
     return;
   }
   
@@ -536,11 +619,11 @@ async function saveService() {
     
     if (error) throw error;
     showToast('Service added');
-    toggleAddServiceForm();
-    await loadServices();
+    closeServiceForm();
     document.getElementById('svc-name').value = '';
     document.getElementById('svc-price').value = '';
     document.getElementById('svc-duration').value = '';
+    await loadServices();
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -556,8 +639,113 @@ async function deleteService(serviceId) {
       .eq('id', serviceId);
     
     if (error) throw error;
-    showToast('Service deleted');
     await loadServices();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// FINANCE
+// ═══════════════════════════════════════════════════════════
+function openFinanceForm() {
+  document.getElementById('finance-form').style.display = 'block';
+  closeMenuOnMobile();
+}
+
+function closeFinanceForm() {
+  document.getElementById('finance-form').style.display = 'none';
+}
+
+async function loadFinance() {
+  try {
+    const { data: records } = await STATE.supabase
+      .from('salon_finance')
+      .select('*')
+      .eq('business_id', STATE.businessId)
+      .order('created_at', { ascending: false });
+    
+    const income = records?.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0) || 0;
+    const expenses = records?.filter(r => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0) || 0;
+    const balance = income - expenses;
+    
+    // Stats
+    const statsHtml = `
+      <div class="stat-card">
+        <div class="stat-icon">📈</div>
+        <div class="stat-label">Income</div>
+        <div class="stat-value" style="color:var(--green);">KES ${income.toLocaleString()}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📉</div>
+        <div class="stat-label">Expenses</div>
+        <div class="stat-value" style="color:var(--red);">KES ${expenses.toLocaleString()}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-label">Balance</div>
+        <div class="stat-value" style="color:var(--gold);">KES ${balance.toLocaleString()}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-label">Transactions</div>
+        <div class="stat-value">${records?.length || 0}</div>
+      </div>
+    `;
+    document.getElementById('finance-stats').innerHTML = statsHtml;
+    
+    // List
+    const listHtml = records?.length ? records.slice(0, 10).map(r => `
+      <div class="finance-item">
+        <div style="display:flex;align-items:center;gap:12px;flex:1;">
+          <div class="finance-icon ${r.type}">${r.type === 'income' ? '📥' : '📤'}</div>
+          <div>
+            <div class="finance-title">${r.category}</div>
+            <div class="finance-desc">${r.description}</div>
+          </div>
+        </div>
+        <div class="finance-amount ${r.type}">
+          ${r.type === 'income' ? '+' : '-'}KES ${r.amount.toLocaleString()}
+        </div>
+      </div>
+    `).join('') : '<p class="empty">No transactions</p>';
+    
+    document.getElementById('finance-list').innerHTML = listHtml;
+  } catch (err) {
+    console.error('Load finance error:', err);
+  }
+}
+
+async function saveFinanceRecord() {
+  const type = document.getElementById('f-type').value;
+  const amount = parseFloat(document.getElementById('f-amount').value);
+  const category = document.getElementById('f-category').value.trim();
+  const description = document.getElementById('f-desc').value.trim();
+  
+  if (!amount || !category) {
+    showToast('Fill required fields', 'error');
+    return;
+  }
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('salon_finance')
+      .insert([{
+        business_id: STATE.businessId,
+        type,
+        amount,
+        category,
+        description,
+        created_at: new Date()
+      }]);
+    
+    if (error) throw error;
+    showToast('Transaction recorded');
+    closeFinanceForm();
+    document.getElementById('f-amount').value = '';
+    document.getElementById('f-category').value = '';
+    document.getElementById('f-desc').value = '';
+    await loadFinance();
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -566,33 +754,26 @@ async function deleteService(serviceId) {
 // ═══════════════════════════════════════════════════════════
 // CLIENTS
 // ═══════════════════════════════════════════════════════════
-async function loadClients() {
-  await renderClients();
-}
-
 async function renderClients() {
   try {
     const search = document.getElementById('client-search').value.toLowerCase();
     
-    const { data: clients, error } = await STATE.supabase
+    const { data: clients } = await STATE.supabase
       .from('salon_clients')
       .select('*')
       .eq('business_id', STATE.businessId);
     
-    if (error) throw error;
-    
     const filtered = clients?.filter(c => 
-      c.name.toLowerCase().includes(search) || 
-      c.phone.includes(search)
+      c.name.toLowerCase().includes(search) || c.phone.includes(search)
     ) || [];
     
     const html = filtered.length ? filtered.map(c => `
-      <div style="background:var(--black2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">
-        <div style="font-size:14px;font-weight:600;">${c.name}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px;">📞 ${c.phone}</div>
-        <div style="font-size:12px;color:var(--muted);">✂️ ${c.visits} visits</div>
+      <div class="card">
+        <div class="card-title">${c.name}</div>
+        <div class="card-sub">📞 ${c.phone}</div>
+        <div class="card-sub">✂️ ${c.visits} visits • Total: KES ${c.total_spent || 0}</div>
       </div>
-    `).join('') : '<p style="color:var(--muted);font-size:13px;">No clients found</p>';
+    `).join('') : '<p class="empty">No clients found</p>';
     
     document.getElementById('client-list').innerHTML = html;
   } catch (err) {
@@ -603,18 +784,22 @@ async function renderClients() {
 // ═══════════════════════════════════════════════════════════
 // INVENTORY
 // ═══════════════════════════════════════════════════════════
-function toggleAddItemForm() {
-  const form = document.getElementById('add-item-form');
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+function openInventoryForm() {
+  document.getElementById('inventory-form').style.display = 'block';
+  closeMenuOnMobile();
 }
 
-async function saveInventoryItem() {
+function closeInventoryForm() {
+  document.getElementById('inventory-form').style.display = 'none';
+}
+
+async function saveInventory() {
   const name = document.getElementById('inv-name').value.trim();
   const qty = parseInt(document.getElementById('inv-qty').value);
   const cost = parseFloat(document.getElementById('inv-cost').value);
   
-  if (!name || isNaN(qty) || isNaN(cost)) {
-    showToast('Please fill all fields', 'error');
+  if (!name || isNaN(qty)) {
+    showToast('Fill required fields', 'error');
     return;
   }
   
@@ -631,7 +816,7 @@ async function saveInventoryItem() {
     
     if (error) throw error;
     showToast('Item added');
-    toggleAddItemForm();
+    closeInventoryForm();
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -644,11 +829,12 @@ async function saveSettings() {
   const name = document.getElementById('set-name').value.trim();
   const email = document.getElementById('set-email').value.trim();
   const phone = document.getElementById('set-phone').value.trim();
+  const address = document.getElementById('set-address').value.trim();
   
   try {
     const { error } = await STATE.supabase
       .from('businesses')
-      .update({ name, email, phone })
+      .update({ name, email, phone, address })
       .eq('id', STATE.businessId);
     
     if (error) throw error;
@@ -659,24 +845,23 @@ async function saveSettings() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// REALTIME SUBSCRIPTIONS
+// UTILITIES
 // ═══════════════════════════════════════════════════════════
+function closeMenuOnMobile() {
+  if (window.innerWidth <= 768) {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    sidebar.classList.add('hidden');
+    overlay.classList.remove('show');
+  }
+}
+
 function setupRealtimeSubscriptions() {
-  // Listen to appointments changes
   STATE.supabase
-    .channel(`salon_appointments:business_id=eq.${STATE.businessId}`)
+    .channel(`salon:business=${STATE.businessId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'salon_appointments' }, () => {
       renderAppointments();
       loadDashboard();
-    })
-    .subscribe();
-  
-  // Listen to stylists changes
-  STATE.supabase
-    .channel(`salon_stylists:business_id=eq.${STATE.businessId}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'salon_stylists' }, () => {
-      loadStylists();
-      loadServices();
     })
     .subscribe();
 }
