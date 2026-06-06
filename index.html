@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>BizFlow — Multi-Profession Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:  #0A0A0A;
+  --black2: #111111;
+  --black3: #1A1A1A;
+  --gold:   #C9A84C;
+  --gold2:  #E8C56A;
+  --goldl:  rgba(201,168,76,0.1);
+  --white:  #FAFAFA;
+  --muted:  #888888;
+  --green:  #22C55E;
+  --greenl: rgba(34,197,94,0.1);
+  --red:    #EF4444;
+  --redl:   rgba(239,68,68,0.1);
+  --border: rgba(201,168,76,0.15);
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); min-height: 100vh; }
+
+/* LOADING */
+#loading { position: fixed; inset: 0; background: var(--black); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 3000; gap: 16px; }
+.spinner { width: 40px; height: 40px; border: 3px solid rgba(201,168,76,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-msg { font-size: 13px; color: var(--muted); }
+
+/* TOAST */
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--black2); border: 1px solid var(--border); color: var(--white); padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 9999; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; max-width: 300px; }
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* AUTH SCREEN */
+#auth-screen { position: fixed; inset: 0; background: var(--black); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+.auth-box { background: var(--black2); border: 1px solid var(--border); border-radius: 20px; padding: 40px 32px; width: 100%; max-width: 420px; }
+.auth-logo { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+.auth-logo span { color: var(--gold); }
+.auth-sub { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 28px; }
+.auth-tab-btns { display: flex; gap: 8px; margin-bottom: 20px; }
+.auth-tab { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+.auth-tab.active { background: var(--goldl); border-color: var(--gold); color: var(--gold); }
+.auth-content { display: none; }
+.auth-content.active { display: block; }
+.input { width: 100%; background: var(--black3); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 11px 14px; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border 0.2s; margin-bottom: 10px; }
+.input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.1); }
+.input::placeholder { color: var(--muted); }
+.auth-err { font-size: 12px; color: var(--red); margin-bottom: 10px; min-height: 18px; }
+.btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-gold { background: var(--gold); color: var(--black); }
+.btn-gold:hover { background: var(--gold2); }
+.profession-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+.prof-btn { padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--black3); cursor: pointer; transition: all 0.2s; text-align: center; }
+.prof-btn:hover, .prof-btn.sel { border-color: var(--gold); background: var(--goldl); }
+.prof-icon { font-size: 28px; margin-bottom: 8px; }
+.prof-name { font-size: 13px; font-weight: 600; }
+.prof-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; font-size: 11px; color: var(--muted); }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.signup-link { text-align: center; font-size: 12px; color: var(--muted); margin-top: 16px; }
+.signup-link a { color: var(--gold); text-decoration: none; cursor: pointer; }
+.signup-link a:hover { text-decoration: underline; }
+
+/* APP SCREEN */
+#app-screen { display: none; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading" style="display:none;">
+  <div class="spinner"></div>
+  <div id="loading-msg">Loading...</div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">Biz<span>Flow</span></div>
+    <div class="auth-sub">Multi-profession management platform</div>
+    
+    <div class="auth-tab-btns">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+      <button class="auth-tab" onclick="switchAuthTab('signup')">Sign Up</button>
+    </div>
+
+    <!-- LOGIN TAB -->
+    <div id="login-tab" class="auth-content active">
+      <div class="auth-err" id="login-err"></div>
+      <input class="input" id="login-email" type="email" placeholder="Email address" autocomplete="email">
+      <input class="input" id="login-pass" type="password" placeholder="Password" autocomplete="current-password">
+      <button class="btn btn-gold" onclick="handleLogin()">Login</button>
+    </div>
+
+    <!-- SIGNUP TAB -->
+    <div id="signup-tab" class="auth-content">
+      <div class="auth-err" id="signup-err"></div>
+      <input class="input" id="signup-name" placeholder="Business name" autocomplete="organization">
+      <input class="input" id="signup-email" type="email" placeholder="Email address" autocomplete="email">
+      <input class="input" id="signup-pass" type="password" placeholder="Password" autocomplete="new-password">
+      <input class="input" id="signup-pass2" type="password" placeholder="Confirm password" autocomplete="new-password">
+      
+      <label style="display:block;margin-bottom:10px;">Choose your profession:</label>
+      <div class="profession-grid">
+        <div class="prof-btn" onclick="selectProfession('salon')">
+          <div class="prof-icon">💇</div>
+          <div class="prof-name">Salon</div>
+          <div class="prof-sub">Hair & Beauty</div>
+        </div>
+        <div class="prof-btn" onclick="selectProfession('restaurant')">
+          <div class="prof-icon">🍽️</div>
+          <div class="prof-name">Restaurant</div>
+          <div class="prof-sub">Food Service</div>
+        </div>
+        <div class="prof-btn" onclick="selectProfession('bookshop')">
+          <div class="prof-icon">📚</div>
+          <div class="prof-name">Bookshop</div>
+          <div class="prof-sub">Retail Books</div>
+        </div>
+        <div class="prof-btn" onclick="selectProfession('chemist')">
+          <div class="prof-icon">💊</div>
+          <div class="prof-name">Chemist</div>
+          <div class="prof-sub">Pharmacy</div>
+        </div>
+        <div class="prof-btn" onclick="selectProfession('law-firm')">
+          <div class="prof-icon">⚖️</div>
+          <div class="prof-name">Law Firm</div>
+          <div class="prof-sub">Legal Services</div>
+        </div>
+        <div class="prof-btn" onclick="selectProfession('betting-shop')">
+          <div class="prof-icon">🎲</div>
+          <div class="prof-name">Betting Shop</div>
+          <div class="prof-sub">Sports Betting</div>
+        </div>
+      </div>
+      
+      <button class="btn btn-gold" style="margin-top:20px;" onclick="handleSignup()">Create Account</button>
+    </div>
+
+    <div class="signup-link">
+      Need help? <a onclick="showSupport()">Contact support</a>
+    </div>
+  </div>
+</div>
+
+<!-- APP SCREEN (will be replaced by actual app) -->
+<div id="app-screen"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// SUPABASE INIT
+// ═══════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://piaphpiowvgalvduacpt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpYXBocGlvd3ZnYWx2ZHVhY3B0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2OTg4MDUsImV4cCI6MjA5NjI3NDgwNX0.lEOrhLB0AaCzsDXWzXHkvth83-KtXKOpTYe8ndi3bFc';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// STATE
+let selectedProfession = null;
+
+// ═══════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════
+function showLoading(msg = 'Loading...') {
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('loading-msg').textContent = msg;
+}
+
+function hideLoading() {
+  document.getElementById('loading').style.display = 'none';
+}
+
+function showToast(msg, type = 'info') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.backgroundColor = type === 'error' ? 'rgba(239,68,68,0.1)' : 'var(--black2)';
+  toast.style.borderColor = type === 'error' ? 'rgba(239,68,68,0.3)' : 'var(--border)';
+  toast.style.color = type === 'error' ? '#EF4444' : 'var(--white)';
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUTH TABS
+// ═══════════════════════════════════════════════════════════
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.auth-content').forEach(c => c.classList.remove('active'));
+  
+  event.target.classList.add('active');
+  document.getElementById(tab + '-tab').classList.add('active');
+  
+  // Reset errors
+  document.getElementById('login-err').textContent = '';
+  document.getElementById('signup-err').textContent = '';
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROFESSION SELECTOR
+// ═══════════════════════════════════════════════════════════
+function selectProfession(prof) {
+  selectedProfession = prof;
+  document.querySelectorAll('.prof-btn').forEach(b => b.classList.remove('sel'));
+  event.target.closest('.prof-btn').classList.add('sel');
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUTH HANDLERS
+// ═══════════════════════════════════════════════════════════
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errDiv = document.getElementById('login-err');
+  
+  if (!email || !pass) {
+    errDiv.textContent = 'Please fill all fields';
+    return;
+  }
+  
+  showLoading('Logging in...');
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    
+    // Get user profile with profession
+    const { data: profile, error: pErr } = await supabase
+      .from('user_profiles')
+      .select('profession, business_id')
+      .eq('user_id', data.user.id)
+      .single();
+    
+    if (pErr) throw new Error('Profile not found');
+    
+    // Go to app
+    goToApp(profile.profession, profile.business_id);
+  } catch (err) {
+    errDiv.textContent = err.message;
+    hideLoading();
+  }
+}
+
+async function handleSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pass = document.getElementById('signup-pass').value;
+  const pass2 = document.getElementById('signup-pass2').value;
+  const errDiv = document.getElementById('signup-err');
+  
+  if (!name || !email || !pass || !pass2) {
+    errDiv.textContent = 'Please fill all fields';
+    return;
+  }
+  
+  if (pass !== pass2) {
+    errDiv.textContent = 'Passwords do not match';
+    return;
+  }
+  
+  if (!selectedProfession) {
+    errDiv.textContent = 'Please select a profession';
+    return;
+  }
+  
+  showLoading('Creating account...');
+  try {
+    const { data, error } = await supabase.auth.signUp({ email, password: pass });
+    if (error) throw error;
+    
+    // Create business
+    const { data: bizData, error: bizErr } = await supabase
+      .from('businesses')
+      .insert([{
+        owner_id: data.user.id,
+        name: name,
+        profession: selectedProfession,
+        created_at: new Date()
+      }])
+      .select()
+      .single();
+    
+    if (bizErr) throw bizErr;
+    
+    // Create user profile
+    const { error: profErr } = await supabase
+      .from('user_profiles')
+      .insert([{
+        user_id: data.user.id,
+        business_id: bizData.id,
+        profession: selectedProfession,
+        role: 'owner'
+      }]);
+    
+    if (profErr) throw profErr;
+    
+    showToast('Account created! Logging you in...');
+    setTimeout(() => goToApp(selectedProfession, bizData.id), 1500);
+  } catch (err) {
+    errDiv.textContent = err.message;
+    hideLoading();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function goToApp(profession, businessId) {
+  // Store session info
+  sessionStorage.setItem('profession', profession);
+  sessionStorage.setItem('business_id', businessId);
+  
+  // Redirect to app
+  window.location.href = `app.html?prof=${profession}&bid=${businessId}`;
+}
+
+function showSupport() {
+  showToast('Email: support@bizflow.com');
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+async function init() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('profession, business_id')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      if (profile) {
+        goToApp(profile.profession, profile.business_id);
+      }
+    }
+  } catch (err) {
+    console.log('No session');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
