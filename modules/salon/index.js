@@ -18,6 +18,7 @@ let DASHBOARD_STATE = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function MODULE_INIT() {
+ await window.loadStaff(); // After loadAppointments
   console.log('Salon module loaded');
   await initializeDashboardData();
   await renderDashboard();
