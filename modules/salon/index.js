@@ -23,6 +23,7 @@ async function MODULE_INIT() {
   await renderDashboard();
   await loadAppointments();
   await window.loadStaff();
+  await window.loadServices();
   await loadOtherPanes();
   setupRealtimeUpdates();
   console.log('Salon module ready');
@@ -417,7 +418,6 @@ window.loadAppointments = async function() {
 
 window.loadOtherPanes = async function() {
   const panes = {
-    'pane-services': '✂️ Services',
     'pane-finance': '💰 Finance',
     'pane-clients': '👤 Clients',
     'pane-inventory': '📦 Inventory',
@@ -1154,4 +1154,284 @@ window.deleteStaff = async function(stylistId) {
 
 window.editStaff = async function(stylistId) {
   alert('Edit feature coming soon! For now, delete and re-add.');
+};
+// ═══════════════════════════════════════════════════════════════════════════
+// BIZFLOW SALON - SERVICES MANAGEMENT
+// SwiftStake Method: Modular, Real-time, Simple
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.loadServices = async function() {
+  const services = document.getElementById('pane-services');
+  if (!services) return;
+  
+  try {
+    await renderServicesPage(services);
+  } catch (err) {
+    console.error('Load services error:', err);
+    services.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
+  }
+};
+
+async function renderServicesPage(container) {
+  container.innerHTML = `
+    <div style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <h2 style="font-size:20px;font-weight:800;margin:0;">Services</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${STATE.userRole === 'owner' ? '<button onclick="window.openAddServiceModal()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">+ Add Service</button>' : ''}
+          <button onclick="window.downloadServices()" style="padding:10px 16px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;">⬇️ Download</button>
+          <button onclick="window.printServices()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">🖨️ Print</button>
+        </div>
+      </div>
+      
+      <!-- ADD SERVICE MODAL (ADMIN ONLY) -->
+      ${STATE.userRole === 'owner' ? `
+        <div id="service-modal" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;">
+          <div style="font-weight:700;margin-bottom:12px;">Add New Service</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <input id="service-name" placeholder="Service/Style name" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+            <input id="service-price" placeholder="Price (KES)" type="number" step="100" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+            <input id="service-duration" placeholder="Duration (minutes)" type="number" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+            <input id="service-description" placeholder="Description" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;grid-column:1/-1;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button onclick="window.saveService()" style="padding:10px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Save</button>
+            <button onclick="window.closeAddServiceModal()" style="padding:10px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">Cancel</button>
+          </div>
+        </div>
+      ` : ''}
+      
+      <!-- SERVICES TABLE -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow-x:auto;">
+        <table id="services-table" style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:var(--bg3);border-bottom:2px solid var(--border);">
+              <th style="padding:12px;text-align:left;font-weight:700;border-right:1px solid var(--border);">Service</th>
+              <th style="padding:12px;text-align:center;font-weight:700;border-right:1px solid var(--border);">Price (KES)</th>
+              <th style="padding:12px;text-align:center;font-weight:700;border-right:1px solid var(--border);">Duration</th>
+              <th style="padding:12px;text-align:left;font-weight:700;">Description</th>
+              ${STATE.userRole === 'owner' ? '<th style="padding:12px;text-align:center;font-weight:700;">Actions</th>' : ''}
+            </tr>
+          </thead>
+          <tbody id="services-tbody">
+            <tr><td colspan="5" style="padding:40px;text-align:center;color:var(--txt3);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  
+  await window.renderServices();
+}
+
+window.renderServices = async function() {
+  try {
+    const { data: services } = await STATE.supabase
+      .from('salon_services')
+      .select('*')
+      .eq('business_id', STATE.businessId)
+      .order('name', { ascending: true });
+    
+    const tbody = document.getElementById('services-tbody');
+    if (!tbody) return;
+    
+    if (!services || services.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:40px;text-align:center;color:var(--txt3);">No services yet</td></tr>';
+      return;
+    }
+    
+    const html = services.map(s => `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:12px;border-right:1px solid var(--border);font-weight:700;">${s.name}</td>
+        <td style="padding:12px;border-right:1px solid var(--border);text-align:center;color:var(--gold);font-weight:700;">KES ${s.price.toLocaleString()}</td>
+        <td style="padding:12px;border-right:1px solid var(--border);text-align:center;color:var(--txt3);">${s.duration || '-'} min</td>
+        <td style="padding:12px;color:var(--txt3);font-size:12px;">${s.description || '-'}</td>
+        ${STATE.userRole === 'owner' ? `
+          <td style="padding:12px;text-align:center;display:flex;gap:6px;justify-content:center;">
+            <button onclick="window.editService && window.editService('${s.id}')" style="padding:4px 8px;background:var(--gold);color:#000;border:none;border-radius:4px;font-size:11px;cursor:pointer;">Edit</button>
+            <button onclick="window.deleteService && window.deleteService('${s.id}')" style="padding:4px 8px;background:var(--red);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>
+          </td>
+        ` : ''}
+      </tr>
+    `).join('');
+    
+    tbody.innerHTML = html;
+  } catch (err) {
+    console.error('Render services error:', err);
+    document.getElementById('services-tbody').innerHTML = `<tr><td colspan="5" style="padding:20px;color:var(--red);">Error: ${err.message}</td></tr>`;
+  }
+};
+
+window.openAddServiceModal = function() {
+  const modal = document.getElementById('service-modal');
+  if (modal) modal.style.display = 'block';
+};
+
+window.closeAddServiceModal = function() {
+  const modal = document.getElementById('service-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.saveService = async function() {
+  const name = document.getElementById('service-name')?.value.trim();
+  const price = parseFloat(document.getElementById('service-price')?.value);
+  const duration = parseInt(document.getElementById('service-duration')?.value) || null;
+  const description = document.getElementById('service-description')?.value.trim();
+  
+  if (!name || !price) {
+    alert('Fill required fields');
+    return;
+  }
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('salon_services')
+      .insert([{
+        business_id: STATE.businessId,
+        name,
+        price,
+        duration,
+        description: description || ''
+      }]);
+    
+    if (error) throw error;
+    
+    window.closeAddServiceModal();
+    document.getElementById('service-name').value = '';
+    document.getElementById('service-price').value = '';
+    document.getElementById('service-duration').value = '';
+    document.getElementById('service-description').value = '';
+    
+    await window.renderServices();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+};
+
+window.deleteService = async function(serviceId) {
+  if (!confirm('Delete this service?')) return;
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('salon_services')
+      .delete()
+      .eq('id', serviceId);
+    
+    if (error) throw error;
+    await window.renderServices();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+};
+
+window.editService = function(serviceId) {
+  alert('Edit feature coming soon!');
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DOWNLOAD & PRINT
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.downloadServices = async function() {
+  try {
+    const { data: services } = await STATE.supabase
+      .from('salon_services')
+      .select('*')
+      .eq('business_id', STATE.businessId)
+      .order('name', { ascending: true });
+    
+    if (!services || services.length === 0) {
+      alert('No services to download');
+      return;
+    }
+    
+    // Create CSV
+    const headers = ['Service', 'Price (KES)', 'Duration (min)', 'Description'];
+    const rows = services.map(s => [
+      s.name,
+      s.price,
+      s.duration || '-',
+      s.description || '-'
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+    
+    // Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `salon-services-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+};
+
+window.printServices = async function() {
+  try {
+    const { data: services } = await STATE.supabase
+      .from('salon_services')
+      .select('*')
+      .eq('business_id', STATE.businessId)
+      .order('name', { ascending: true });
+    
+    if (!services || services.length === 0) {
+      alert('No services to print');
+      return;
+    }
+    
+    // Create print-friendly HTML
+    const html = `
+      <html>
+        <head>
+          <title>Salon Services</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { text-align: center; color: #333; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background-color: #f5f5f5; font-weight: bold; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            .price { text-align: right; font-weight: bold; color: #D4AF37; }
+            .duration { text-align: center; }
+          </style>
+        </head>
+        <body>
+          <h1>💅 Salon Services Price List</h1>
+          <p style="text-align: center; color: #666;">Printed on ${new Date().toLocaleDateString()}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Service</th>
+                <th class="price">Price (KES)</th>
+                <th class="duration">Duration</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${services.map(s => `
+                <tr>
+                  <td>${s.name}</td>
+                  <td class="price">KES ${s.price.toLocaleString()}</td>
+                  <td class="duration">${s.duration || '-'} min</td>
+                  <td>${s.description || '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+    
+    // Print
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 250);
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
 };
