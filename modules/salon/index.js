@@ -25,6 +25,7 @@ async function MODULE_INIT() {
   await window.loadStaff();
   await window.loadServices();
   await window.loadFinance();
+  await window.loadClients();
   await loadOtherPanes();
   setupRealtimeUpdates();
   console.log('Salon module ready');
@@ -419,7 +420,6 @@ window.loadAppointments = async function() {
 
 window.loadOtherPanes = async function() {
   const panes = {
-    'pane-clients': '👤 Clients',
     'pane-inventory': '📦 Inventory',
     'pane-reports': '📊 Reports',
     'pane-settings': '⚙️ Settings'
@@ -1850,3 +1850,221 @@ function getDateRange(period) {
     end: now.toISOString()
   };
 }
+// ═══════════════════════════════════════════════════════════════════════════
+// BIZFLOW SALON - CLIENTS MANAGEMENT (ADMIN ONLY)
+// SwiftStake Method: Modular, Real-time, Simple
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.loadClients = async function() {
+  const clients = document.getElementById('pane-clients');
+  if (!clients) return;
+  
+  // Admin only
+  if (STATE.userRole !== 'owner') {
+    clients.innerHTML = '<div style="padding:20px;color:var(--red);">❌ Access denied. Admin only.</div>';
+    return;
+  }
+  
+  try {
+    await renderClientsPage(clients);
+  } catch (err) {
+    console.error('Load clients error:', err);
+    clients.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
+  }
+};
+
+async function renderClientsPage(container) {
+  container.innerHTML = `
+    <div style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="font-size:20px;font-weight:800;margin:0;">Clients</h2>
+        <button onclick="window.openAddClientModal()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">+ Add Client</button>
+      </div>
+      
+      <!-- SEARCH -->
+      <input id="client-search" placeholder="Search by name or phone..." onkeyup="window.filterClients()" style="padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:13px;">
+      
+      <!-- ADD CLIENT MODAL -->
+      <div id="client-modal" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;">
+        <div style="font-weight:700;margin-bottom:12px;">Add New Client</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <input id="client-name" placeholder="Full name" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <input id="client-phone" placeholder="Phone (+254...)" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <input id="client-email" placeholder="Email" type="email" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <select id="client-favorite-stylist" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+            <option value="">Select favorite stylist</option>
+          </select>
+          <input id="client-favorite-style" placeholder="Favorite style/service" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <input id="client-notes" placeholder="Notes" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;grid-column:1/-1;">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button onclick="window.saveClient()" style="padding:10px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Save</button>
+          <button onclick="window.closeAddClientModal()" style="padding:10px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+      
+      <!-- CLIENTS LIST -->
+      <div id="clients-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+  `;
+  
+  // Load stylists for dropdown
+  const { data: stylists } = await STATE.supabase
+    .from('salon_stylists')
+    .select('id,name')
+    .eq('business_id', STATE.businessId);
+  
+  if (stylists) {
+    const select = document.getElementById('client-favorite-stylist');
+    stylists.forEach(s => {
+      const option = document.createElement('option');
+      option.value = s.id;
+      option.text = s.name;
+      select.appendChild(option);
+    });
+  }
+  
+  await window.renderClients();
+}
+
+window.renderClients = async function() {
+  try {
+    const { data: clients } = await STATE.supabase
+      .from('salon_clients')
+      .select('*,salon_stylists(name)')
+      .eq('business_id', STATE.businessId)
+      .order('name', { ascending: true });
+    
+    const list = document.getElementById('clients-list');
+    if (!list) return;
+    
+    if (!clients || clients.length === 0) {
+      list.innerHTML = '<div style="color:var(--txt3);text-align:center;padding:40px;">No clients yet</div>';
+      return;
+    }
+    
+    const html = clients.map(c => `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;data-client-id='${c.id}' class='client-card'>
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:12px;">
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:13px;">${c.name}</div>
+            <div style="font-size:12px;color:var(--txt3);margin-top:4px;">📞 ${c.phone}</div>
+            ${c.email ? `<div style="font-size:12px;color:var(--txt3);">📧 ${c.email}</div>` : ''}
+            ${c.salon_stylists?.name ? `<div style="font-size:12px;color:var(--txt3);margin-top:2px;">✂️ Fav: ${c.salon_stylists.name}</div>` : ''}
+            ${c.favorite_style ? `<div style="font-size:12px;color:var(--txt3);">💅 ${c.favorite_style}</div>` : ''}
+            ${c.notes ? `<div style="font-size:12px;color:var(--txt3);margin-top:2px;">📝 ${c.notes}</div>` : ''}
+            <div style="font-size:11px;color:var(--txt3);margin-top:4px;">Last visit: ${c.last_visit ? new Date(c.last_visit).toLocaleDateString() : 'Never'}</div>
+          </div>
+          
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <a href="tel:${c.phone}" style="padding:6px 12px;background:var(--green);color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;">📞 Call</a>
+            <a href="https://wa.me/${c.phone.replace('+', '')}?text=Hello%20${c.name}%2C%20we%20have%20an%20appointment%20reminder!" target="_blank" style="padding:6px 12px;background:#25D366;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;">💬 WhatsApp</a>
+            <button onclick="window.appointmentFromClient && window.appointmentFromClient('${c.id}', '${c.name}', '${c.phone}')" style="padding:6px 12px;background:var(--gold);color:#000;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">📅 Appt</button>
+            <button onclick="window.deleteClient && window.deleteClient('${c.id}')" style="padding:6px 12px;background:var(--red);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    
+    list.innerHTML = html;
+  } catch (err) {
+    console.error('Render clients error:', err);
+  }
+};
+
+window.filterClients = async function() {
+  const searchText = document.getElementById('client-search')?.value.toLowerCase() || '';
+  const cards = document.querySelectorAll('.client-card');
+  
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    card.style.display = text.includes(searchText) ? 'block' : 'none';
+  });
+};
+
+window.openAddClientModal = function() {
+  const modal = document.getElementById('client-modal');
+  if (modal) modal.style.display = 'block';
+};
+
+window.closeAddClientModal = function() {
+  const modal = document.getElementById('client-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.saveClient = async function() {
+  const name = document.getElementById('client-name')?.value.trim();
+  const phone = document.getElementById('client-phone')?.value.trim();
+  const email = document.getElementById('client-email')?.value.trim();
+  const stylistId = document.getElementById('client-favorite-stylist')?.value;
+  const style = document.getElementById('client-favorite-style')?.value.trim();
+  const notes = document.getElementById('client-notes')?.value.trim();
+  
+  if (!name || !phone) {
+    alert('Fill required fields');
+    return;
+  }
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('salon_clients')
+      .insert([{
+        business_id: STATE.businessId,
+        name,
+        phone,
+        email: email || '',
+        stylist_id: stylistId || null,
+        favorite_style: style || '',
+        notes: notes || '',
+        last_visit: new Date()
+      }]);
+    
+    if (error) throw error;
+    
+    window.closeAddClientModal();
+    document.getElementById('client-name').value = '';
+    document.getElementById('client-phone').value = '';
+    document.getElementById('client-email').value = '';
+    document.getElementById('client-favorite-stylist').value = '';
+    document.getElementById('client-favorite-style').value = '';
+    document.getElementById('client-notes').value = '';
+    
+    await window.renderClients();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+};
+
+window.deleteClient = async function(clientId) {
+  if (!confirm('Delete this client?')) return;
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('salon_clients')
+      .delete()
+      .eq('id', clientId);
+    
+    if (error) throw error;
+    await window.renderClients();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+};
+
+window.appointmentFromClient = async function(clientId, clientName, clientPhone) {
+  // Set appointment modal values and show it
+  const apptNameInput = document.getElementById('appt-client-name');
+  const apptPhoneInput = document.getElementById('appt-client-phone');
+  const apptModal = document.getElementById('appt-modal');
+  
+  if (apptNameInput) apptNameInput.value = clientName;
+  if (apptPhoneInput) apptPhoneInput.value = clientPhone;
+  
+  // Show appointments tab and modal
+  const apptTab = document.querySelector('[onclick*="showPane"][onclick*="appointments"]');
+  if (apptTab) apptTab.click();
+  
+  if (apptModal) {
+    setTimeout(() => apptModal.style.display = 'block', 100);
+  }
+};
