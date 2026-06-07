@@ -426,7 +426,9 @@ window.loadOtherPanes = async function() {
   };
   Object.entries(panes).forEach(([id, title]) => {
     const el = document.getElementById(id);
-    if (el) el.innerHTML = `<div style="padding:20px;"><h2>${title}</h2><div style="color:var(--txt3);">Coming soon...</div></div>`;
+    if (el) {
+      el.innerHTML = `<div style="padding:20px;"><h2style="margin-bottom:20px;">${title}</h2><div style="color:var(--txt3);">Coming soon...</div></div>`;
+    }
   });
 };
 
