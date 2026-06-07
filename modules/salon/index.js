@@ -27,6 +27,7 @@ async function MODULE_INIT() {
   await window.loadFinance();
   await window.loadClients();
   await window.loadInventory();
+  await window.loadReports();
   await window.loadOtherPanes();
   setupRealtimeUpdates();
   console.log('Salon module ready');
@@ -421,7 +422,6 @@ window.loadAppointments = async function() {
 
 window.loadOtherPanes = async function() {
   const panes = {
-    'pane-reports': '📊 Reports',
     'pane-settings': '⚙️ Settings'
   };
   Object.entries(panes).forEach(([id, title]) => {
@@ -2301,3 +2301,316 @@ window.deleteProduct = async function(productId) {
     alert('Error: ' + err.message);
   }
 };
+// ═══════════════════════════════════════════════════════════════════════════
+// BIZFLOW SALON - REPORTS & ANALYTICS (ADMIN ONLY)
+// SwiftStake Method: Modular, Real-time, Simple
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.loadReports = async function() {
+  const reports = document.getElementById('pane-reports');
+  if (!reports) return;
+  
+  // Admin only
+  if (STATE.userRole !== 'owner') {
+    reports.innerHTML = '<div style="padding:20px;color:var(--red);">❌ Access denied. Admin only.</div>';
+    return;
+  }
+  
+  try {
+    await renderReportsPage(reports);
+  } catch (err) {
+    console.error('Load reports error:', err);
+    reports.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
+  }
+};
+
+async function renderReportsPage(container) {
+  container.innerHTML = `
+    <div style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px;">
+      <h2 style="font-size:20px;font-weight:800;margin:0;">Reports & Analytics</h2>
+      
+      <!-- TIME PERIOD SELECTOR -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="window.setReportPeriod('day')" id="rep-btn-day" style="padding:8px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Today</button>
+        <button onclick="window.setReportPeriod('week')" id="rep-btn-week" style="padding:8px 16px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">This Week</button>
+        <button onclick="window.setReportPeriod('month')" id="rep-btn-month" style="padding:8px 16px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">This Month</button>
+      </div>
+      
+      <!-- TOP SHOPS -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:12px;">🏪 Top Performing Shops</div>
+        <div id="top-shops" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      
+      <!-- TOP STYLISTS -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:12px;">⭐ Top Performing Stylists</div>
+        <div id="top-stylists" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      
+      <!-- REVENUE CHART -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:12px;">📈 Revenue Trend</div>
+        <div id="revenue-chart" style="height:200px;display:flex;align-items:flex-end;gap:4px;padding:10px;background:var(--bg3);border-radius:6px;"></div>
+      </div>
+      
+      <!-- AI INSIGHTS -->
+      <div style="background:var(--gold);color:#000;border-radius:8px;padding:16px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:12px;">💡 AI Insights & Recommendations</div>
+        <div id="ai-insights" style="font-size:12px;line-height:1.6;color:#222;">
+          <div style="text-align:center;color:#444;">Loading insights...</div>
+        </div>
+        <button onclick="window.refreshAIInsights()" style="margin-top:12px;padding:8px 16px;background:#000;color:var(--gold);border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:11px;">Refresh Insights</button>
+      </div>
+    </div>
+  `;
+  
+  window.REPORT_PERIOD = 'day';
+  await window.renderReports();
+}
+
+window.setReportPeriod = async function(period) {
+  window.REPORT_PERIOD = period;
+  ['day', 'week', 'month'].forEach(p => {
+    const btn = document.getElementById(`rep-btn-${p}`);
+    if (btn) {
+      btn.style.background = p === period ? 'var(--gold)' : 'var(--border)';
+      btn.style.color = p === period ? '#000' : 'var(--txt)';
+    }
+  });
+  await window.renderReports();
+};
+
+window.renderReports = async function() {
+  try {
+    const dateRange = getDateRange(window.REPORT_PERIOD || 'day');
+    
+    // Get all data
+    const { data: financeData } = await STATE.supabase
+      .from('salon_finance')
+      .select('*')
+      .eq('business_id', STATE.businessId)
+      .gte('created_at', dateRange.start)
+      .lte('created_at', dateRange.end);
+    
+    const { data: appointments } = await STATE.supabase
+      .from('salon_appointments')
+      .select('*')
+      .eq('business_id', STATE.businessId)
+      .gte('created_at', dateRange.start)
+      .lte('created_at', dateRange.end);
+    
+    const { data: stylists } = await STATE.supabase
+      .from('salon_stylists')
+      .select('*')
+      .eq('business_id', STATE.businessId);
+    
+    // Calculate shop revenue (for now, just current shop)
+    const shopRevenue = financeData?.filter(f => f.type === 'income').reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
+    const shopAppointments = appointments?.length || 0;
+    const completedAppointments = appointments?.filter(a => a.status === 'done').length || 0;
+    const completionRate = shopAppointments > 0 ? Math.round((completedAppointments / shopAppointments) * 100) : 0;
+    
+    // Calculate stylist performance
+    const stylistPerformance = {};
+    if (stylists && appointments) {
+      stylists.forEach(s => {
+        const stylistAppts = appointments.filter(a => a.stylist_id === s.id);
+        const stylistCompleted = stylistAppts.filter(a => a.status === 'done').length;
+        const stylistRevenue = financeData?.filter(f => f.description && f.description.includes(s.name)).reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
+        
+        stylistPerformance[s.id] = {
+          name: s.name,
+          appointments: stylistAppts.length,
+          completed: stylistCompleted,
+          revenue: stylistRevenue,
+          rate: stylistAppts.length > 0 ? Math.round((stylistCompleted / stylistAppts.length) * 100) : 0
+        };
+      });
+    }
+    
+    // Render top shops
+    const shopsDiv = document.getElementById('top-shops');
+    shopsDiv.innerHTML = `
+      <div style="background:var(--bg3);padding:12px;border-radius:6px;border-left:3px solid var(--gold);">
+        <div style="display:flex;justify-content:space-between;align-items:start;">
+          <div>
+            <div style="font-weight:700;font-size:12px;">Current Shop</div>
+            <div style="font-size:11px;color:var(--txt3);margin-top:2px;">Revenue: KES ${shopRevenue.toLocaleString()}</div>
+            <div style="font-size:11px;color:var(--txt3);">Appointments: ${shopAppointments} | Completed: ${completedAppointments} (${completionRate}%)</div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Render top stylists
+    const stylistsDiv = document.getElementById('top-stylists');
+    const sortedStylists = Object.entries(stylistPerformance)
+      .sort(([,a], [,b]) => b.revenue - a.revenue)
+      .slice(0, 5);
+    
+    stylistsDiv.innerHTML = sortedStylists.length > 0 ? sortedStylists.map(([id, data], index) => `
+      <div style="background:var(--bg3);padding:12px;border-radius:6px;border-left:3px solid var(--gold);display:flex;justify-content:space-between;align-items:start;">
+        <div>
+          <div style="font-weight:700;font-size:12px;">🥇 #${index + 1} - ${data.name}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:2px;">Revenue: KES ${data.revenue.toLocaleString()}</div>
+          <div style="font-size:11px;color:var(--txt3);">Appointments: ${data.appointments} | Completed: ${data.completed} (${data.rate}%)</div>
+        </div>
+        <div style="font-weight:700;color:var(--gold);text-align:right;">
+          KES ${data.revenue.toLocaleString()}
+        </div>
+      </div>
+    `).join('') : '<div style="color:var(--txt3);">No stylist data</div>';
+    
+    // Render revenue chart (simple bar chart)
+    const chartDiv = document.getElementById('revenue-chart');
+    if (financeData) {
+      const dailyRevenue = {};
+      financeData.filter(f => f.type === 'income').forEach(f => {
+        const date = new Date(f.created_at).toLocaleDateString();
+        dailyRevenue[date] = (dailyRevenue[date] || 0) + f.amount;
+      });
+      
+      const maxRevenue = Math.max(...Object.values(dailyRevenue), 1);
+      chartDiv.innerHTML = Object.entries(dailyRevenue)
+        .slice(-7) // Last 7 days
+        .map(([date, revenue]) => {
+          const height = (revenue / maxRevenue) * 150;
+          return `
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
+              <div style="background:var(--gold);width:100%;height:${height}px;border-radius:4px;position:relative;">
+                <div style="position:absolute;top:-20px;width:100%;text-align:center;font-size:9px;color:var(--txt3);">KES ${Math.round(revenue/1000)}k</div>
+              </div>
+              <div style="font-size:9px;color:var(--txt3);text-align:center;">${date.split('/')[0]}/${date.split('/')[1]}</div>
+            </div>
+          `;
+        }).join('');
+    }
+    
+    // Generate AI insights
+    await window.generateAIInsights(shopRevenue, shopAppointments, completedAppointments, sortedStylists);
+    
+  } catch (err) {
+    console.error('Render reports error:', err);
+  }
+};
+
+window.generateAIInsights = async function(revenue, totalAppts, completedAppts, topStylists) {
+  const insightsDiv = document.getElementById('ai-insights');
+  insightsDiv.innerHTML = '<div style="text-align:center;color:#444;">Analyzing business data...</div>';
+  
+  try {
+    const completionRate = totalAppts > 0 ? Math.round((completedAppts / totalAppts) * 100) : 0;
+    const topStylist = topStylists.length > 0 ? topStylists[0][1].name : 'Unknown';
+    
+    const prompt = `You are a business analytics expert for salons. Analyze this salon performance data and provide 2-3 short, actionable insights in bullet points:
+    
+- Revenue: KES ${revenue.toLocaleString()}
+- Total Appointments: ${totalAppts}
+- Completed: ${completedAppts} (${completionRate}% completion rate)
+- Top Performer: ${topStylist}
+- Period: ${window.REPORT_PERIOD || 'daily'}
+
+Provide practical, specific recommendations to improve business. Keep insights brief and actionable.`;
+    
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 300,
+        messages: [
+          { role: "user", content: prompt }
+        ],
+      })
+    });
+    
+    const data = await response.json();
+    const insight = data.content?.[0]?.text || "Unable to generate insights at this time.";
+    
+    insightsDiv.innerHTML = `<div style="white-space:pre-wrap;">${insight}</div>`;
+  } catch (err) {
+    console.error('AI insights error:', err);
+    insightsDiv.innerHTML = `<div style="color:#666;">📊 Key Metrics:</div>
+• Revenue: KES ${revenue.toLocaleString()}
+• Completion Rate: ${totalAppts > 0 ? Math.round((completedAppts / totalAppts) * 100) : 0}%
+• Total Appointments: ${totalAppts}
+
+💡 Tips: Focus on high-performing stylists and maintain appointment completion rates above 90%.`;
+  }
+};
+
+window.refreshAIInsights = async function() {
+  const dateRange = getDateRange(window.REPORT_PERIOD || 'day');
+  const { data: financeData } = await STATE.supabase
+    .from('salon_finance')
+    .select('*')
+    .eq('business_id', STATE.businessId)
+    .gte('created_at', dateRange.start)
+    .lte('created_at', dateRange.end);
+  
+  const { data: appointments } = await STATE.supabase
+    .from('salon_appointments')
+    .select('*')
+    .eq('business_id', STATE.businessId)
+    .gte('created_at', dateRange.start)
+    .lte('created_at', dateRange.end);
+  
+  const { data: stylists } = await STATE.supabase
+    .from('salon_stylists')
+    .select('*')
+    .eq('business_id', STATE.businessId);
+  
+  const shopRevenue = financeData?.filter(f => f.type === 'income').reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
+  const shopAppointments = appointments?.length || 0;
+  const completedAppointments = appointments?.filter(a => a.status === 'done').length || 0;
+  
+  const stylistPerformance = {};
+  if (stylists && appointments) {
+    stylists.forEach(s => {
+      const stylistAppts = appointments.filter(a => a.stylist_id === s.id);
+      const stylistCompleted = stylistAppts.filter(a => a.status === 'done').length;
+      const stylistRevenue = financeData?.filter(f => f.description && f.description.includes(s.name)).reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
+      
+      stylistPerformance[s.id] = {
+        name: s.name,
+        appointments: stylistAppts.length,
+        completed: stylistCompleted,
+        revenue: stylistRevenue
+      };
+    });
+  }
+  
+  const sortedStylists = Object.entries(stylistPerformance).sort(([,a], [,b]) => b.revenue - a.revenue);
+  await window.generateAIInsights(shopRevenue, shopAppointments, completedAppointments, sortedStylists);
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPER
+// ═══════════════════════════════════════════════════════════════════════════
+
+function getDateRange(period) {
+  const now = new Date();
+  const start = new Date();
+  
+  switch(period) {
+    case 'day':
+      start.setHours(0, 0, 0, 0);
+      break;
+    case 'week':
+      start.setDate(now.getDate() - now.getDay());
+      start.setHours(0, 0, 0, 0);
+      break;
+    case 'month':
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      break;
+  }
+  
+  return {
+    start: start.toISOString(),
+    end: now.toISOString()
+  };
+}
