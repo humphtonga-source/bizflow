@@ -417,7 +417,6 @@ window.loadAppointments = async function() {
 
 window.loadOtherPanes = async function() {
   const panes = {
-    'pane-staff': '👥 Staff',
     'pane-services': '✂️ Services',
     'pane-finance': '💰 Finance',
     'pane-clients': '👤 Clients',
