@@ -24,6 +24,7 @@ async function MODULE_INIT() {
   await loadAppointments();
   await window.loadStaff();
   await window.loadServices();
+  await window.loadFinance();
   await loadOtherPanes();
   setupRealtimeUpdates();
   console.log('Salon module ready');
@@ -418,7 +419,6 @@ window.loadAppointments = async function() {
 
 window.loadOtherPanes = async function() {
   const panes = {
-    'pane-finance': '💰 Finance',
     'pane-clients': '👤 Clients',
     'pane-inventory': '📦 Inventory',
     'pane-reports': '📊 Reports',
@@ -1435,3 +1435,418 @@ window.printServices = async function() {
     alert('Error: ' + err.message);
   }
 };
+// ═══════════════════════════════════════════════════════════════════════════
+// BIZFLOW SALON - FINANCE MANAGEMENT
+// SwiftStake Method: Modular, Real-time, Simple
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.loadFinance = async function() {
+  const finance = document.getElementById('pane-finance');
+  if (!finance) return;
+  
+  try {
+    if (STATE.userRole === 'owner') {
+      await loadAdminFinance(finance);
+    } else {
+      await loadEmployeeFinance(finance);
+    }
+  } catch (err) {
+    console.error('Load finance error:', err);
+    finance.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ADMIN FINANCE
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadAdminFinance(container) {
+  container.innerHTML = `
+    <div style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px;">
+      <h2 style="font-size:20px;font-weight:800;margin:0;">Finance Dashboard</h2>
+      
+      <!-- TIME PERIOD SELECTOR -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="window.setFinancePeriod('day')" id="btn-day" style="padding:8px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Today</button>
+        <button onclick="window.setFinancePeriod('week')" id="btn-week" style="padding:8px 16px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">This Week</button>
+        <button onclick="window.setFinancePeriod('month')" id="btn-month" style="padding:8px 16px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">This Month</button>
+      </div>
+      
+      <!-- MAIN STATS -->
+      <div id="finance-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;"></div>
+      
+      <!-- REVENUE BY SHOP -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:12px;">🏪 Revenue by Shop</div>
+        <div id="revenue-by-shop" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      
+      <!-- EMPLOYEE REVENUE -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:12px;">👥 Employee Revenue Breakdown</div>
+        <div id="employee-revenue" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      
+      <!-- EXPENSES -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-weight:700;font-size:13px;">💸 Expenses</div>
+          <button onclick="window.openAddExpenseModal()" style="padding:6px 12px;background:var(--gold);color:#000;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">+ Add</button>
+        </div>
+        <div id="expenses-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      
+      <!-- ADD EXPENSE MODAL -->
+      <div id="expense-modal" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-weight:700;margin-bottom:12px;">Add Expense</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <input id="expense-amount" placeholder="Amount (KES)" type="number" step="100" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <input id="expense-category" placeholder="Category" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <input id="expense-description" placeholder="Description" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;grid-column:1/-1;">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button onclick="window.saveExpense()" style="padding:10px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Save</button>
+          <button onclick="window.closeAddExpenseModal()" style="padding:10px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  window.FINANCE_PERIOD = 'day';
+  await window.renderAdminFinance();
+}
+
+window.setFinancePeriod = async function(period) {
+  window.FINANCE_PERIOD = period;
+  ['day', 'week', 'month'].forEach(p => {
+    const btn = document.getElementById(`btn-${p}`);
+    if (btn) {
+      btn.style.background = p === period ? 'var(--gold)' : 'var(--border)';
+      btn.style.color = p === period ? '#000' : 'var(--txt)';
+    }
+  });
+  await window.renderAdminFinance();
+};
+
+window.renderAdminFinance = async function() {
+  try {
+    const dateRange = getDateRange(window.FINANCE_PERIOD || 'day');
+    
+    // Get all finance records
+    const { data: financeData } = await STATE.supabase
+      .from('salon_finance')
+      .select('*')
+      .eq('business_id', STATE.businessId)
+      .gte('created_at', dateRange.start)
+      .lte('created_at', dateRange.end);
+    
+    // Get stylists & agreements
+    const { data: stylists } = await STATE.supabase
+      .from('salon_stylists')
+      .select('*')
+      .eq('business_id', STATE.businessId);
+    
+    const { data: agreements } = await STATE.supabase
+      .from('salon_agreements')
+      .select('*')
+      .eq('business_id', STATE.businessId);
+    
+    // Calculate totals
+    const income = financeData?.filter(f => f.type === 'income').reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
+    const expenses = financeData?.filter(f => f.type === 'expense').reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
+    const netRevenue = income - expenses;
+    
+    // Calculate commissions
+    let totalCommissions = 0;
+    const employeeRevenue = {};
+    
+    if (stylists && agreements) {
+      stylists.forEach(s => {
+        const agreement = agreements.find(a => a.stylist_id === s.id);
+        const stylistIncome = financeData?.filter(f => f.description && f.description.includes(s.name)).reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
+        
+        let commission = 0;
+        if (agreement?.agreement_type === 'commission' && agreement?.commission_percent) {
+          commission = (stylistIncome * agreement.commission_percent) / 100;
+        } else if (agreement?.agreement_type === 'commission+monthly' && agreement?.commission_percent) {
+          commission = (stylistIncome * agreement.commission_percent) / 100;
+        }
+        
+        totalCommissions += commission;
+        employeeRevenue[s.id] = {
+          name: s.name,
+          revenue: stylistIncome,
+          commission: commission,
+          agreement: agreement?.agreement_type || 'N/A'
+        };
+      });
+    }
+    
+    // Render summary
+    const summary = document.getElementById('finance-summary');
+    summary.innerHTML = `
+      <div style="background:var(--green);color:#fff;padding:16px;border-radius:8px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;">KES ${income.toLocaleString()}</div>
+        <div style="font-size:12px;margin-top:6px;">Income</div>
+      </div>
+      <div style="background:var(--red);color:#fff;padding:16px;border-radius:8px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;">KES ${expenses.toLocaleString()}</div>
+        <div style="font-size:12px;margin-top:6px;">Expenses</div>
+      </div>
+      <div style="background:var(--gold);color:#000;padding:16px;border-radius:8px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;">KES ${totalCommissions.toLocaleString()}</div>
+        <div style="font-size:12px;margin-top:6px;">Commissions</div>
+      </div>
+      <div style="background:var(--blue);color:#fff;padding:16px;border-radius:8px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;">KES ${netRevenue.toLocaleString()}</div>
+        <div style="font-size:12px;margin-top:6px;">Net Revenue</div>
+      </div>
+    `;
+    
+    // Render revenue by shop
+    const revenueByShop = document.getElementById('revenue-by-shop');
+    revenueByShop.innerHTML = `
+      <div style="background:var(--bg3);padding:10px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid var(--gold);">
+        <div style="font-weight:700;">Current Shop</div>
+        <div style="font-weight:700;color:var(--gold);">KES ${income.toLocaleString()}</div>
+      </div>
+    `;
+    
+    // Render employee revenue
+    const employeeRev = document.getElementById('employee-revenue');
+    if (Object.keys(employeeRevenue).length > 0) {
+      employeeRev.innerHTML = Object.entries(employeeRevenue).map(([id, data]) => `
+        <div style="background:var(--bg3);padding:10px;border-radius:6px;border-left:3px solid var(--gold);">
+          <div style="display:flex;justify-content:space-between;align-items:start;">
+            <div>
+              <div style="font-weight:700;font-size:12px;">${data.name}</div>
+              <div style="font-size:11px;color:var(--txt3);margin-top:2px;">📊 ${data.revenue.toLocaleString()}</div>
+              <div style="font-size:11px;color:var(--txt3);">💼 ${data.agreement}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700;color:var(--gold);font-size:12px;">Commission: KES ${data.commission.toLocaleString()}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      employeeRev.innerHTML = '<div style="color:var(--txt3);padding:10px;">No employee data</div>';
+    }
+    
+    // Render expenses
+    const expensesList = document.getElementById('expenses-list');
+    const expenseRecords = financeData?.filter(f => f.type === 'expense') || [];
+    if (expenseRecords.length > 0) {
+      expensesList.innerHTML = expenseRecords.map(e => `
+        <div style="background:var(--bg3);padding:10px;border-radius:6px;border-left:3px solid var(--red);display:flex;justify-content:space-between;">
+          <div>
+            <div style="font-weight:700;font-size:12px;">${e.category || 'Expense'}</div>
+            <div style="font-size:11px;color:var(--txt3);">${e.description || '-'}</div>
+          </div>
+          <div style="font-weight:700;color:var(--red);">KES ${e.amount.toLocaleString()}</div>
+        </div>
+      `).join('');
+    } else {
+      expensesList.innerHTML = '<div style="color:var(--txt3);padding:10px;">No expenses</div>';
+    }
+  } catch (err) {
+    console.error('Render admin finance error:', err);
+  }
+};
+
+window.openAddExpenseModal = function() {
+  const modal = document.getElementById('expense-modal');
+  if (modal) modal.style.display = 'block';
+};
+
+window.closeAddExpenseModal = function() {
+  const modal = document.getElementById('expense-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.saveExpense = async function() {
+  const amount = parseFloat(document.getElementById('expense-amount')?.value);
+  const category = document.getElementById('expense-category')?.value.trim();
+  const description = document.getElementById('expense-description')?.value.trim();
+  
+  if (!amount || !category) {
+    alert('Fill required fields');
+    return;
+  }
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('salon_finance')
+      .insert([{
+        business_id: STATE.businessId,
+        type: 'expense',
+        amount,
+        category,
+        description: description || ''
+      }]);
+    
+    if (error) throw error;
+    
+    window.closeAddExpenseModal();
+    document.getElementById('expense-amount').value = '';
+    document.getElementById('expense-category').value = '';
+    document.getElementById('expense-description').value = '';
+    
+    await window.renderAdminFinance();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EMPLOYEE FINANCE
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadEmployeeFinance(container) {
+  try {
+    const { data: stylist } = await STATE.supabase
+      .from('salon_stylists')
+      .select('id,name')
+      .eq('user_id', STATE.user.id)
+      .eq('business_id', STATE.businessId)
+      .single();
+    
+    if (!stylist) {
+      container.innerHTML = '<div style="padding:20px;color:var(--red);">Error: Stylist profile not found</div>';
+      return;
+    }
+    
+    window.CURRENT_STYLIST_ID = stylist.id;
+    
+    container.innerHTML = `
+      <div style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px;">
+        <h2 style="font-size:20px;font-weight:800;margin:0;">My Revenue</h2>
+        
+        <!-- TIME PERIOD SELECTOR -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="window.setEmpFinancePeriod('day')" id="emp-btn-day" style="padding:8px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Today</button>
+          <button onclick="window.setEmpFinancePeriod('week')" id="emp-btn-week" style="padding:8px 16px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">This Week</button>
+          <button onclick="window.setEmpFinancePeriod('month')" id="emp-btn-month" style="padding:8px 16px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">This Month</button>
+        </div>
+        
+        <!-- STATS -->
+        <div id="emp-finance-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;"></div>
+        
+        <!-- AGREEMENT INFO -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <div style="font-weight:700;font-size:13px;margin-bottom:12px;">💼 Your Agreement</div>
+          <div id="emp-agreement" style="color:var(--txt3);"></div>
+        </div>
+      </div>
+    `;
+    
+    window.EMP_FINANCE_PERIOD = 'day';
+    await window.renderEmployeeFinance();
+  } catch (err) {
+    container.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
+  }
+}
+
+window.setEmpFinancePeriod = async function(period) {
+  window.EMP_FINANCE_PERIOD = period;
+  ['day', 'week', 'month'].forEach(p => {
+    const btn = document.getElementById(`emp-btn-${p}`);
+    if (btn) {
+      btn.style.background = p === period ? 'var(--gold)' : 'var(--border)';
+      btn.style.color = p === period ? '#000' : 'var(--txt)';
+    }
+  });
+  await window.renderEmployeeFinance();
+};
+
+window.renderEmployeeFinance = async function() {
+  try {
+    const dateRange = getDateRange(window.EMP_FINANCE_PERIOD || 'day');
+    
+    // Get agreement
+    const { data: agreement } = await STATE.supabase
+      .from('salon_agreements')
+      .select('*')
+      .eq('stylist_id', window.CURRENT_STYLIST_ID)
+      .order('start_date', { ascending: false })
+      .limit(1)
+      .single();
+    
+    // Get personal revenue (assume stored with stylist name or id)
+    const { data: financeData } = await STATE.supabase
+      .from('salon_finance')
+      .select('*')
+      .eq('business_id', STATE.businessId)
+      .eq('type', 'income')
+      .gte('created_at', dateRange.start)
+      .lte('created_at', dateRange.end);
+    
+    const stylistData = await STATE.supabase.from('salon_stylists').select('name').eq('id', window.CURRENT_STYLIST_ID).single();
+    const stylistName = stylistData.data?.name || '';
+    
+    // Filter by stylist (basic filtering - in production would have stylist_id field)
+    const myRevenue = financeData?.filter(f => f.description && f.description.includes(stylistName)).reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
+    
+    let myCommission = 0;
+    if (agreement?.agreement_type === 'commission' && agreement?.commission_percent) {
+      myCommission = (myRevenue * agreement.commission_percent) / 100;
+    } else if (agreement?.agreement_type === 'commission+monthly') {
+      myCommission = (myRevenue * agreement.commission_percent) / 100 + (agreement.monthly_salary || 0);
+    } else if (agreement?.agreement_type === 'monthly') {
+      myCommission = agreement.monthly_salary || 0;
+    }
+    
+    // Render summary
+    document.getElementById('emp-finance-summary').innerHTML = `
+      <div style="background:var(--green);color:#fff;padding:16px;border-radius:8px;text-align:center;">
+        <div style="font-size:24px;font-weight:800;">KES ${myRevenue.toLocaleString()}</div>
+        <div style="font-size:12px;margin-top:6px;">Revenue Generated</div>
+      </div>
+      <div style="background:var(--gold);color:#000;padding:16px;border-radius:8px;text-align:center;">
+        <div style="font-size:24px;font-weight:800;">KES ${myCommission.toLocaleString()}</div>
+        <div style="font-size:12px;margin-top:6px;">Your Earnings</div>
+      </div>
+    `;
+    
+    // Render agreement
+    const agreementText = agreement ? 
+      `${agreement.agreement_type.toUpperCase()}${agreement.commission_percent ? ` - ${agreement.commission_percent}% commission` : ''}${agreement.monthly_salary ? ` - KES ${agreement.monthly_salary} monthly` : ''}` 
+      : 'No agreement set';
+    
+    document.getElementById('emp-agreement').innerHTML = `
+      <div style="background:var(--bg3);padding:10px;border-radius:6px;font-size:12px;">
+        ${agreementText}
+      </div>
+    `;
+  } catch (err) {
+    console.error('Render employee finance error:', err);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPER FUNCTION
+// ═══════════════════════════════════════════════════════════════════════════
+
+function getDateRange(period) {
+  const now = new Date();
+  const start = new Date();
+  
+  switch(period) {
+    case 'day':
+      start.setHours(0, 0, 0, 0);
+      break;
+    case 'week':
+      start.setDate(now.getDate() - now.getDay());
+      start.setHours(0, 0, 0, 0);
+      break;
+    case 'month':
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      break;
+  }
+  
+  return {
+    start: start.toISOString(),
+    end: now.toISOString()
+  };
+}
