@@ -27,7 +27,7 @@ async function MODULE_INIT() {
   await window.loadFinance();
   await window.loadClients();
   await window.loadInventory();
-  await loadOtherPanes();
+  await window.loadOtherPanes();
   setupRealtimeUpdates();
   console.log('Salon module ready');
 }
