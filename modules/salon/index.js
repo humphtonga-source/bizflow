@@ -26,6 +26,7 @@ async function MODULE_INIT() {
   await window.loadServices();
   await window.loadFinance();
   await window.loadClients();
+  await window.loadInventory();
   await loadOtherPanes();
   setupRealtimeUpdates();
   console.log('Salon module ready');
@@ -420,14 +421,13 @@ window.loadAppointments = async function() {
 
 window.loadOtherPanes = async function() {
   const panes = {
-    'pane-inventory': '📦 Inventory',
     'pane-reports': '📊 Reports',
     'pane-settings': '⚙️ Settings'
   };
   Object.entries(panes).forEach(([id, title]) => {
     const el = document.getElementById(id);
     if (el) {
-      el.innerHTML = `<div style="padding:20px;"><h2style="margin-bottom:20px;">${title}</h2><div style="color:var(--txt3);">Coming soon...</div></div>`;
+      el.innerHTML = `<div style="padding:20px;"><h2 style="margin-bottom:20px;">${title}</h2><div style="color:var(--txt3);">Coming soon...</div></div>`;
     }
   });
 };
@@ -2068,5 +2068,236 @@ window.appointmentFromClient = async function(clientId, clientName, clientPhone)
   
   if (apptModal) {
     setTimeout(() => apptModal.style.display = 'block', 100);
+  }
+};
+// ═══════════════════════════════════════════════════════════════════════════
+// BIZFLOW SALON - INVENTORY MANAGEMENT (ADMIN ONLY)
+// SwiftStake Method: Modular, Real-time, Simple
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.loadInventory = async function() {
+  const inventory = document.getElementById('pane-inventory');
+  if (!inventory) return;
+  
+  // Admin only
+  if (STATE.userRole !== 'owner') {
+    inventory.innerHTML = '<div style="padding:20px;color:var(--red);">❌ Access denied. Admin only.</div>';
+    return;
+  }
+  
+  try {
+    await renderInventoryPage(inventory);
+  } catch (err) {
+    console.error('Load inventory error:', err);
+    inventory.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
+  }
+};
+
+async function renderInventoryPage(container) {
+  container.innerHTML = `
+    <div style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="font-size:20px;font-weight:800;margin:0;">Inventory</h2>
+        <button onclick="window.openAddProductModal()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">+ Add Product</button>
+      </div>
+      
+      <!-- LOW STOCK ALERTS -->
+      <div id="low-stock-alerts" style="display:flex;flex-direction:column;gap:8px;"></div>
+      
+      <!-- ADD PRODUCT MODAL -->
+      <div id="product-modal" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;">
+        <div style="font-weight:700;margin-bottom:12px;">Add New Product</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <input id="product-name" placeholder="Product name" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <input id="product-category" placeholder="Category" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <input id="product-quantity" placeholder="Quantity" type="number" step="1" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <input id="product-reorder" placeholder="Reorder level" type="number" step="1" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <input id="product-cost" placeholder="Unit cost (KES)" type="number" step="100" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <input id="product-supplier" placeholder="Supplier" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <input id="product-notes" placeholder="Notes" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;grid-column:1/-1;">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button onclick="window.saveProduct()" style="padding:10px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Save</button>
+          <button onclick="window.closeAddProductModal()" style="padding:10px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+      
+      <!-- INVENTORY TABLE -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow-x:auto;">
+        <table id="inventory-table" style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:var(--bg3);border-bottom:2px solid var(--border);">
+              <th style="padding:12px;text-align:left;font-weight:700;border-right:1px solid var(--border);">Product</th>
+              <th style="padding:12px;text-align:center;font-weight:700;border-right:1px solid var(--border);">Quantity</th>
+              <th style="padding:12px;text-align:center;font-weight:700;border-right:1px solid var(--border);">Reorder</th>
+              <th style="padding:12px;text-align:center;font-weight:700;border-right:1px solid var(--border);">Cost (KES)</th>
+              <th style="padding:12px;text-align:left;font-weight:700;border-right:1px solid var(--border);">Supplier</th>
+              <th style="padding:12px;text-align:center;font-weight:700;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-tbody">
+            <tr><td colspan="6" style="padding:40px;text-align:center;color:var(--txt3);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  
+  await window.renderInventory();
+}
+
+window.renderInventory = async function() {
+  try {
+    const { data: products } = await STATE.supabase
+      .from('salon_inventory')
+      .select('*')
+      .eq('business_id', STATE.businessId)
+      .order('name', { ascending: true });
+    
+    const tbody = document.getElementById('inventory-tbody');
+    if (!tbody) return;
+    
+    if (!products || products.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--txt3);">No products yet</td></tr>';
+      renderLowStockAlerts([]);
+      return;
+    }
+    
+    // Show low stock alerts
+    const lowStock = products.filter(p => p.quantity <= p.reorder_level);
+    renderLowStockAlerts(lowStock);
+    
+    const html = products.map(p => {
+      const isLowStock = p.quantity <= p.reorder_level;
+      return `
+        <tr style="border-bottom:1px solid var(--border);background:${isLowStock ? 'rgba(239, 68, 68, 0.1)' : ''};">
+          <td style="padding:12px;border-right:1px solid var(--border);font-weight:700;">
+            ${p.name}
+            ${p.category ? `<div style="font-size:11px;color:var(--txt3);">${p.category}</div>` : ''}
+          </td>
+          <td style="padding:12px;border-right:1px solid var(--border);text-align:center;font-weight:700;color:${isLowStock ? 'var(--red)' : 'var(--gold)'};">${p.quantity}</td>
+          <td style="padding:12px;border-right:1px solid var(--border);text-align:center;color:var(--txt3);">${p.reorder_level}</td>
+          <td style="padding:12px;border-right:1px solid var(--border);text-align:center;color:var(--txt3);">KES ${p.unit_cost.toLocaleString()}</td>
+          <td style="padding:12px;border-right:1px solid var(--border);color:var(--txt3);font-size:12px;">${p.supplier || '-'}</td>
+          <td style="padding:12px;text-align:center;display:flex;gap:6px;justify-content:center;">
+            <button onclick="window.updateProductQuantity && window.updateProductQuantity('${p.id}')" style="padding:4px 8px;background:var(--gold);color:#000;border:none;border-radius:4px;font-size:11px;cursor:pointer;">Update</button>
+            <button onclick="window.deleteProduct && window.deleteProduct('${p.id}')" style="padding:4px 8px;background:var(--red);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    
+    tbody.innerHTML = html;
+  } catch (err) {
+    console.error('Render inventory error:', err);
+    document.getElementById('inventory-tbody').innerHTML = `<tr><td colspan="6" style="padding:20px;color:var(--red);">Error: ${err.message}</td></tr>`;
+  }
+};
+
+function renderLowStockAlerts(lowStock) {
+  const alertsDiv = document.getElementById('low-stock-alerts');
+  if (!alertsDiv) return;
+  
+  if (lowStock.length === 0) {
+    alertsDiv.innerHTML = '';
+    return;
+  }
+  
+  alertsDiv.innerHTML = lowStock.map(p => `
+    <div style="background:var(--red);color:#fff;padding:12px;border-radius:8px;border-left:4px solid var(--red);">
+      <div style="font-weight:700;font-size:13px;">⚠️ LOW STOCK ALERT</div>
+      <div style="font-size:12px;margin-top:6px;">
+        <strong>${p.name}</strong> is running low!
+        <div style="margin-top:4px;">Stock: ${p.quantity} / Reorder Level: ${p.reorder_level}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.openAddProductModal = function() {
+  const modal = document.getElementById('product-modal');
+  if (modal) modal.style.display = 'block';
+};
+
+window.closeAddProductModal = function() {
+  const modal = document.getElementById('product-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.saveProduct = async function() {
+  const name = document.getElementById('product-name')?.value.trim();
+  const category = document.getElementById('product-category')?.value.trim();
+  const quantity = parseInt(document.getElementById('product-quantity')?.value);
+  const reorder = parseInt(document.getElementById('product-reorder')?.value);
+  const cost = parseFloat(document.getElementById('product-cost')?.value);
+  const supplier = document.getElementById('product-supplier')?.value.trim();
+  const notes = document.getElementById('product-notes')?.value.trim();
+  
+  if (!name || !quantity || !reorder || !cost) {
+    alert('Fill required fields');
+    return;
+  }
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('salon_inventory')
+      .insert([{
+        business_id: STATE.businessId,
+        name,
+        category: category || '',
+        quantity,
+        reorder_level: reorder,
+        unit_cost: cost,
+        supplier: supplier || '',
+        notes: notes || ''
+      }]);
+    
+    if (error) throw error;
+    
+    window.closeAddProductModal();
+    document.getElementById('product-name').value = '';
+    document.getElementById('product-category').value = '';
+    document.getElementById('product-quantity').value = '';
+    document.getElementById('product-reorder').value = '';
+    document.getElementById('product-cost').value = '';
+    document.getElementById('product-supplier').value = '';
+    document.getElementById('product-notes').value = '';
+    
+    await window.renderInventory();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+};
+
+window.updateProductQuantity = async function(productId) {
+  const newQty = prompt('Enter new quantity:');
+  if (!newQty || isNaN(newQty)) return;
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('salon_inventory')
+      .update({ quantity: parseInt(newQty) })
+      .eq('id', productId);
+    
+    if (error) throw error;
+    await window.renderInventory();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+};
+
+window.deleteProduct = async function(productId) {
+  if (!confirm('Delete this product?')) return;
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('salon_inventory')
+      .delete()
+      .eq('id', productId);
+    
+    if (error) throw error;
+    await window.renderInventory();
+  } catch (err) {
+    alert('Error: ' + err.message);
   }
 };
