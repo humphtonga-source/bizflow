@@ -422,7 +422,7 @@ window.loadAppointments = async function() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 window.loadOtherPanes = async function() {
-  // All panes now have dedicated load functions
+  // All panes have dedicated load functions
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1889,7 +1889,9 @@ async function renderClientsPage(container) {
           <select id="client-favorite-stylist" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
             <option value="">Select favorite stylist</option>
           </select>
-          <input id="client-favorite-style" placeholder="Favorite style/service" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+          <select id="client-favorite-service" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+            <option value="">Select favorite service</option>
+          </select>
           <input id="client-notes" placeholder="Notes" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;grid-column:1/-1;">
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -1919,6 +1921,22 @@ async function renderClientsPage(container) {
     });
   }
   
+  // Load services for dropdown
+  const { data: services } = await STATE.supabase
+    .from('salon_services')
+    .select('id,name,price')
+    .eq('business_id', STATE.businessId);
+  
+  if (services) {
+    const select = document.getElementById('client-favorite-service');
+    services.forEach(s => {
+      const option = document.createElement('option');
+      option.value = s.id;
+      option.text = `${s.name} (KES ${s.price})`;
+      select.appendChild(option);
+    });
+  }
+  
   await window.renderClients();
 }
 
@@ -1938,16 +1956,22 @@ window.renderClients = async function() {
       return;
     }
     
-    // Get stylists separately for lookup
+    // Get stylists and services for lookup
     const { data: stylists } = await STATE.supabase
       .from('salon_stylists')
       .select('id,name')
       .eq('business_id', STATE.businessId);
     
+    const { data: services } = await STATE.supabase
+      .from('salon_services')
+      .select('id,name,price')
+      .eq('business_id', STATE.businessId);
+    
     const stylistMap = {};
-    if (stylists) {
-      stylists.forEach(s => stylistMap[s.id] = s.name);
-    }
+    const serviceMap = {};
+    
+    if (stylists) stylists.forEach(s => stylistMap[s.id] = s.name);
+    if (services) services.forEach(s => serviceMap[s.id] = s);
     
     const html = clients.map(c => `
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;data-client-id='${c.id}' class='client-card'>
@@ -1956,8 +1980,8 @@ window.renderClients = async function() {
             <div style="font-weight:700;font-size:13px;">${c.name}</div>
             <div style="font-size:12px;color:var(--txt3);margin-top:4px;">📞 ${c.phone}</div>
             ${c.email ? `<div style="font-size:12px;color:var(--txt3);">📧 ${c.email}</div>` : ''}
-            ${c.stylist_id && stylistMap[c.stylist_id] ? `<div style="font-size:12px;color:var(--txt3);margin-top:2px;">✂️ Fav: ${stylistMap[c.stylist_id]}</div>` : ''}
-            ${c.favorite_style ? `<div style="font-size:12px;color:var(--txt3);">💅 ${c.favorite_style}</div>` : ''}
+            ${c.stylist_id && stylistMap[c.stylist_id] ? `<div style="font-size:12px;color:var(--txt3);margin-top:2px;">✂️ Stylist: ${stylistMap[c.stylist_id]}</div>` : ''}
+            ${c.favorite_service_id && serviceMap[c.favorite_service_id] ? `<div style="font-size:12px;color:var(--txt3);">💅 Service: ${serviceMap[c.favorite_service_id].name} (KES ${serviceMap[c.favorite_service_id].price})</div>` : ''}
             ${c.notes ? `<div style="font-size:12px;color:var(--txt3);margin-top:2px;">📝 ${c.notes}</div>` : ''}
             <div style="font-size:11px;color:var(--txt3);margin-top:4px;">Last visit: ${c.last_visit ? new Date(c.last_visit).toLocaleDateString() : 'Never'}</div>
           </div>
@@ -2003,7 +2027,7 @@ window.saveClient = async function() {
   const phone = document.getElementById('client-phone')?.value.trim();
   const email = document.getElementById('client-email')?.value.trim();
   const stylistId = document.getElementById('client-favorite-stylist')?.value;
-  const style = document.getElementById('client-favorite-style')?.value.trim();
+  const serviceId = document.getElementById('client-favorite-service')?.value;
   const notes = document.getElementById('client-notes')?.value.trim();
   
   if (!name || !phone) {
@@ -2020,7 +2044,7 @@ window.saveClient = async function() {
         phone,
         email: email || '',
         stylist_id: stylistId || null,
-        favorite_style: style || '',
+        favorite_service_id: serviceId || null,
         notes: notes || '',
         last_visit: new Date()
       }]);
@@ -2032,7 +2056,7 @@ window.saveClient = async function() {
     document.getElementById('client-phone').value = '';
     document.getElementById('client-email').value = '';
     document.getElementById('client-favorite-stylist').value = '';
-    document.getElementById('client-favorite-style').value = '';
+    document.getElementById('client-favorite-service').value = '';
     document.getElementById('client-notes').value = '';
     
     await window.renderClients();
