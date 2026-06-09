@@ -28,6 +28,7 @@ async function MODULE_INIT() {
   await window.loadClients();
   await window.loadInventory();
   await window.loadReports();
+  await window.loadSettings();
   await window.loadOtherPanes();
   setupRealtimeUpdates();
   console.log('Salon module ready');
@@ -421,15 +422,7 @@ window.loadAppointments = async function() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 window.loadOtherPanes = async function() {
-  const panes = {
-    'pane-settings': '⚙️ Settings'
-  };
-  Object.entries(panes).forEach(([id, title]) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.innerHTML = `<div style="padding:20px;"><h2 style="margin-bottom:20px;">${title}</h2><div style="color:var(--txt3);">Coming soon...</div></div>`;
-    }
-  });
+  // All panes now have dedicated load functions
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2614,3 +2607,366 @@ function getDateRange(period) {
     end: now.toISOString()
   };
 }
+// ═══════════════════════════════════════════════════════════════════════════
+// BIZFLOW SALON - SETTINGS (ADMIN ONLY)
+// SwiftStake Method: Modular, Real-time, Simple
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.loadSettings = async function() {
+  const settings = document.getElementById('pane-settings');
+  if (!settings) return;
+  
+  // Admin only
+  if (STATE.userRole !== 'owner') {
+    settings.innerHTML = '<div style="padding:20px;color:var(--red);">❌ Access denied. Admin only.</div>';
+    return;
+  }
+  
+  try {
+    await renderSettingsPage(settings);
+  } catch (err) {
+    console.error('Load settings error:', err);
+    settings.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
+  }
+};
+
+async function renderSettingsPage(container) {
+  container.innerHTML = `
+    <div style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:20px;">
+      <h2 style="font-size:20px;font-weight:800;margin:0;">Settings</h2>
+      
+      <!-- TABS -->
+      <div style="display:flex;gap:8px;border-bottom:2px solid var(--border);">
+        <button onclick="window.switchSettingsTab('shops')" id="tab-shops" style="padding:12px 16px;background:none;border:none;border-bottom:3px solid var(--gold);color:var(--txt);font-weight:700;cursor:pointer;font-size:13px;">🏪 Shops</button>
+        <button onclick="window.switchSettingsTab('employees')" id="tab-employees" style="padding:12px 16px;background:none;border:none;border-bottom:3px solid transparent;color:var(--txt3);font-weight:700;cursor:pointer;font-size:13px;">👥 Employees</button>
+      </div>
+      
+      <!-- SHOPS TAB -->
+      <div id="shops-content" style="display:flex;flex-direction:column;gap:16px;">
+        <button onclick="window.openAddShopModal()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;align-self:flex-start;">+ New Shop</button>
+        
+        <!-- ADD SHOP MODAL -->
+        <div id="shop-modal" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;">
+          <div style="font-weight:700;margin-bottom:12px;">Add New Shop/Branch</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <input id="shop-name" placeholder="Shop name" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+            <input id="shop-location" placeholder="Location" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+            <input id="shop-phone" placeholder="Phone" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+            <input id="shop-manager" placeholder="Manager name" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+            <input id="shop-email" placeholder="Email" type="email" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;grid-column:1/-1;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button onclick="window.saveShop()" style="padding:10px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Save</button>
+            <button onclick="window.closeAddShopModal()" style="padding:10px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">Cancel</button>
+          </div>
+        </div>
+        
+        <!-- SHOPS LIST -->
+        <div id="shops-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+      
+      <!-- EMPLOYEES TAB -->
+      <div id="employees-content" style="display:none;flex-direction:column;gap:16px;">
+        <button onclick="window.openAddEmployeeModal()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;align-self:flex-start;">+ Add Employee</button>
+        
+        <!-- ADD EMPLOYEE MODAL -->
+        <div id="employee-modal" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;">
+          <div style="font-weight:700;margin-bottom:12px;">Add New Employee</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <input id="emp-name" placeholder="Full name" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+            <input id="emp-phone" placeholder="Phone" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+            <input id="emp-email" placeholder="Email" type="email" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+            <select id="emp-role" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-size:12px;">
+              <option value="stylist">Stylist</option>
+              <option value="manager">Manager</option>
+              <option value="receptionist">Receptionist</option>
+              <option value="assistant">Assistant</option>
+            </select>
+          </div>
+          
+          <div style="margin-bottom:12px;">
+            <div style="font-weight:700;font-size:12px;margin-bottom:8px;">Permissions:</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label style="display:flex;gap:8px;font-size:12px;">
+                <input type="checkbox" id="perm-appts" style="width:16px;height:16px;">
+                Manage Appointments
+              </label>
+              <label style="display:flex;gap:8px;font-size:12px;">
+                <input type="checkbox" id="perm-finance" style="width:16px;height:16px;">
+                Manage Finance
+              </label>
+              <label style="display:flex;gap:8px;font-size:12px;">
+                <input type="checkbox" id="perm-staff" style="width:16px;height:16px;">
+                Manage Staff
+              </label>
+              <label style="display:flex;gap:8px;font-size:12px;">
+                <input type="checkbox" id="perm-inventory" style="width:16px;height:16px;">
+                Manage Inventory
+              </label>
+            </div>
+          </div>
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button onclick="window.saveEmployee()" style="padding:10px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Save</button>
+            <button onclick="window.closeAddEmployeeModal()" style="padding:10px;background:var(--border);color:var(--txt);border:none;border-radius:6px;font-weight:700;cursor:pointer;">Cancel</button>
+          </div>
+        </div>
+        
+        <!-- EMPLOYEES LIST -->
+        <div id="employees-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+    </div>
+  `;
+  
+  await window.renderShops();
+  await window.renderEmployees();
+}
+
+window.switchSettingsTab = function(tab) {
+  const tabs = ['shops', 'employees'];
+  tabs.forEach(t => {
+    const content = document.getElementById(`${t}-content`);
+    const tabBtn = document.getElementById(`tab-${t}`);
+    if (t === tab) {
+      if (content) content.style.display = 'flex';
+      if (tabBtn) {
+        tabBtn.style.borderBottomColor = 'var(--gold)';
+        tabBtn.style.color = 'var(--txt)';
+      }
+    } else {
+      if (content) content.style.display = 'none';
+      if (tabBtn) {
+        tabBtn.style.borderBottomColor = 'transparent';
+        tabBtn.style.color = 'var(--txt3)';
+      }
+    }
+  });
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SHOPS
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.renderShops = async function() {
+  try {
+    const { data: businesses } = await STATE.supabase
+      .from('businesses')
+      .select('*')
+      .eq('owner_id', STATE.user.id);
+    
+    const list = document.getElementById('shops-list');
+    if (!list) return;
+    
+    if (!businesses || businesses.length === 0) {
+      list.innerHTML = '<div style="color:var(--txt3);text-align:center;padding:40px;">No shops yet</div>';
+      return;
+    }
+    
+    list.innerHTML = businesses.map(b => `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:12px;">
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:13px;">${b.name}</div>
+            ${b.location ? `<div style="font-size:12px;color:var(--txt3);margin-top:4px;">📍 ${b.location}</div>` : ''}
+            ${b.phone ? `<div style="font-size:12px;color:var(--txt3);">📞 ${b.phone}</div>` : ''}
+            ${b.manager_name ? `<div style="font-size:12px;color:var(--txt3);">👤 ${b.manager_name}</div>` : ''}
+            <div style="font-size:11px;color:var(--txt3);margin-top:4px;">Created: ${new Date(b.created_at).toLocaleDateString()}</div>
+          </div>
+          <button onclick="window.deleteShop && window.deleteShop('${b.id}')" style="padding:6px 12px;background:var(--red);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('Render shops error:', err);
+  }
+};
+
+window.openAddShopModal = function() {
+  const modal = document.getElementById('shop-modal');
+  if (modal) modal.style.display = 'block';
+};
+
+window.closeAddShopModal = function() {
+  const modal = document.getElementById('shop-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.saveShop = async function() {
+  const name = document.getElementById('shop-name')?.value.trim();
+  const location = document.getElementById('shop-location')?.value.trim();
+  const phone = document.getElementById('shop-phone')?.value.trim();
+  const manager = document.getElementById('shop-manager')?.value.trim();
+  const email = document.getElementById('shop-email')?.value.trim();
+  
+  if (!name) {
+    alert('Shop name is required');
+    return;
+  }
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('businesses')
+      .insert([{
+        owner_id: STATE.user.id,
+        name,
+        location: location || '',
+        phone: phone || '',
+        manager_name: manager || '',
+        email: email || ''
+      }]);
+    
+    if (error) throw error;
+    
+    window.closeAddShopModal();
+    document.getElementById('shop-name').value = '';
+    document.getElementById('shop-location').value = '';
+    document.getElementById('shop-phone').value = '';
+    document.getElementById('shop-manager').value = '';
+    document.getElementById('shop-email').value = '';
+    
+    await window.renderShops();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+};
+
+window.deleteShop = async function(shopId) {
+  if (!confirm('Delete this shop? This cannot be undone.')) return;
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('businesses')
+      .delete()
+      .eq('id', shopId);
+    
+    if (error) throw error;
+    await window.renderShops();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EMPLOYEES
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.renderEmployees = async function() {
+  try {
+    const { data: stylists } = await STATE.supabase
+      .from('salon_stylists')
+      .select('*')
+      .eq('business_id', STATE.businessId)
+      .order('name', { ascending: true });
+    
+    const list = document.getElementById('employees-list');
+    if (!list) return;
+    
+    if (!stylists || stylists.length === 0) {
+      list.innerHTML = '<div style="color:var(--txt3);text-align:center;padding:40px;">No employees yet</div>';
+      return;
+    }
+    
+    list.innerHTML = stylists.map(s => {
+      const perms = JSON.parse(s.permissions || '{}');
+      return `
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:start;gap:12px;">
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:13px;">${s.name}</div>
+              <div style="font-size:12px;color:var(--txt3);margin-top:4px;">📞 ${s.phone || 'N/A'}</div>
+              <div style="font-size:12px;color:var(--txt3);">💼 ${s.role || 'Stylist'}</div>
+              
+              <!-- PERMISSIONS -->
+              <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+                <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:4px;">Permissions:</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <span style="padding:2px 6px;background:${perms.can_manage_appts ? 'var(--green)' : 'var(--border)'};color:#000;border-radius:3px;font-size:10px;">📅 Appts</span>
+                  <span style="padding:2px 6px;background:${perms.can_manage_finance ? 'var(--green)' : 'var(--border)'};color:#000;border-radius:3px;font-size:10px;">💰 Finance</span>
+                  <span style="padding:2px 6px;background:${perms.can_manage_staff ? 'var(--green)' : 'var(--border)'};color:#000;border-radius:3px;font-size:10px;">👥 Staff</span>
+                  <span style="padding:2px 6px;background:${perms.can_manage_inventory ? 'var(--green)' : 'var(--border)'};color:#000;border-radius:3px;font-size:10px;">📦 Inv</span>
+                </div>
+              </div>
+            </div>
+            <button onclick="window.deleteEmployee && window.deleteEmployee('${s.id}')" style="padding:6px 12px;background:var(--red);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Render employees error:', err);
+  }
+};
+
+window.openAddEmployeeModal = function() {
+  const modal = document.getElementById('employee-modal');
+  if (modal) modal.style.display = 'block';
+};
+
+window.closeAddEmployeeModal = function() {
+  const modal = document.getElementById('employee-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.saveEmployee = async function() {
+  const name = document.getElementById('emp-name')?.value.trim();
+  const phone = document.getElementById('emp-phone')?.value.trim();
+  const email = document.getElementById('emp-email')?.value.trim();
+  const role = document.getElementById('emp-role')?.value;
+  
+  const permissions = {
+    can_manage_appts: document.getElementById('perm-appts')?.checked || false,
+    can_manage_finance: document.getElementById('perm-finance')?.checked || false,
+    can_manage_staff: document.getElementById('perm-staff')?.checked || false,
+    can_manage_inventory: document.getElementById('perm-inventory')?.checked || false
+  };
+  
+  if (!name) {
+    alert('Name is required');
+    return;
+  }
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('salon_stylists')
+      .insert([{
+        business_id: STATE.businessId,
+        name,
+        phone: phone || '',
+        email: email || '',
+        role: role || 'stylist',
+        permissions: JSON.stringify(permissions)
+      }]);
+    
+    if (error) throw error;
+    
+    window.closeAddEmployeeModal();
+    document.getElementById('emp-name').value = '';
+    document.getElementById('emp-phone').value = '';
+    document.getElementById('emp-email').value = '';
+    document.getElementById('emp-role').value = 'stylist';
+    document.getElementById('perm-appts').checked = false;
+    document.getElementById('perm-finance').checked = false;
+    document.getElementById('perm-staff').checked = false;
+    document.getElementById('perm-inventory').checked = false;
+    
+    await window.renderEmployees();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+};
+
+window.deleteEmployee = async function(stylistId) {
+  if (!confirm('Delete this employee?')) return;
+  
+  try {
+    const { error } = await STATE.supabase
+      .from('salon_stylists')
+      .delete()
+      .eq('id', stylistId);
+    
+    if (error) throw error;
+    await window.renderEmployees();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+};
