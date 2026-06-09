@@ -1926,7 +1926,7 @@ window.renderClients = async function() {
   try {
     const { data: clients } = await STATE.supabase
       .from('salon_clients')
-      .select('*,salon_stylists(name)')
+      .select('*')
       .eq('business_id', STATE.businessId)
       .order('name', { ascending: true });
     
@@ -1938,6 +1938,17 @@ window.renderClients = async function() {
       return;
     }
     
+    // Get stylists separately for lookup
+    const { data: stylists } = await STATE.supabase
+      .from('salon_stylists')
+      .select('id,name')
+      .eq('business_id', STATE.businessId);
+    
+    const stylistMap = {};
+    if (stylists) {
+      stylists.forEach(s => stylistMap[s.id] = s.name);
+    }
+    
     const html = clients.map(c => `
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;data-client-id='${c.id}' class='client-card'>
         <div style="display:flex;justify-content:space-between;align-items:start;gap:12px;">
@@ -1945,7 +1956,7 @@ window.renderClients = async function() {
             <div style="font-weight:700;font-size:13px;">${c.name}</div>
             <div style="font-size:12px;color:var(--txt3);margin-top:4px;">📞 ${c.phone}</div>
             ${c.email ? `<div style="font-size:12px;color:var(--txt3);">📧 ${c.email}</div>` : ''}
-            ${c.salon_stylists?.name ? `<div style="font-size:12px;color:var(--txt3);margin-top:2px;">✂️ Fav: ${c.salon_stylists.name}</div>` : ''}
+            ${c.stylist_id && stylistMap[c.stylist_id] ? `<div style="font-size:12px;color:var(--txt3);margin-top:2px;">✂️ Fav: ${stylistMap[c.stylist_id]}</div>` : ''}
             ${c.favorite_style ? `<div style="font-size:12px;color:var(--txt3);">💅 ${c.favorite_style}</div>` : ''}
             ${c.notes ? `<div style="font-size:12px;color:var(--txt3);margin-top:2px;">📝 ${c.notes}</div>` : ''}
             <div style="font-size:11px;color:var(--txt3);margin-top:4px;">Last visit: ${c.last_visit ? new Date(c.last_visit).toLocaleDateString() : 'Never'}</div>
@@ -2490,49 +2501,40 @@ window.renderReports = async function() {
 
 window.generateAIInsights = async function(revenue, totalAppts, completedAppts, topStylists) {
   const insightsDiv = document.getElementById('ai-insights');
-  insightsDiv.innerHTML = '<div style="text-align:center;color:#444;">Analyzing business data...</div>';
   
-  try {
-    const completionRate = totalAppts > 0 ? Math.round((completedAppts / totalAppts) * 100) : 0;
-    const topStylist = topStylists.length > 0 ? topStylists[0][1].name : 'Unknown';
-    
-    const prompt = `You are a business analytics expert for salons. Analyze this salon performance data and provide 2-3 short, actionable insights in bullet points:
-    
-- Revenue: KES ${revenue.toLocaleString()}
-- Total Appointments: ${totalAppts}
-- Completed: ${completedAppts} (${completionRate}% completion rate)
-- Top Performer: ${topStylist}
-- Period: ${window.REPORT_PERIOD || 'daily'}
-
-Provide practical, specific recommendations to improve business. Keep insights brief and actionable.`;
-    
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 300,
-        messages: [
-          { role: "user", content: prompt }
-        ],
-      })
-    });
-    
-    const data = await response.json();
-    const insight = data.content?.[0]?.text || "Unable to generate insights at this time.";
-    
-    insightsDiv.innerHTML = `<div style="white-space:pre-wrap;">${insight}</div>`;
-  } catch (err) {
-    console.error('AI insights error:', err);
-    insightsDiv.innerHTML = `<div style="color:#666;">📊 Key Metrics:</div>
-• Revenue: KES ${revenue.toLocaleString()}
-• Completion Rate: ${totalAppts > 0 ? Math.round((completedAppts / totalAppts) * 100) : 0}%
-• Total Appointments: ${totalAppts}
-
-💡 Tips: Focus on high-performing stylists and maintain appointment completion rates above 90%.`;
+  const completionRate = totalAppts > 0 ? Math.round((completedAppts / totalAppts) * 100) : 0;
+  const topStylist = topStylists.length > 0 ? topStylists[0][1].name : 'No data';
+  const topRevenue = topStylists.length > 0 ? topStylists[0][1].revenue : 0;
+  
+  // Local AI-style insights (no API call needed)
+  let insights = [];
+  
+  if (completionRate < 80) {
+    insights.push(`⚠️ Completion rate is ${completionRate}% - target 90%+ to improve customer satisfaction`);
+  } else if (completionRate >= 90) {
+    insights.push(`✅ Excellent completion rate (${completionRate}%) - keep up the great work!`);
   }
+  
+  if (topStylists.length > 0) {
+    insights.push(`⭐ ${topStylist} is your top performer with KES ${topRevenue.toLocaleString()} in revenue`);
+  }
+  
+  if (totalAppts > 0) {
+    const avgRevenuePerAppt = revenue / totalAppts;
+    insights.push(`📊 Average revenue per appointment: KES ${Math.round(avgRevenuePerAppt).toLocaleString()}`);
+  } else {
+    insights.push(`📅 Schedule more appointments to increase revenue`);
+  }
+  
+  if (revenue < 10000) {
+    insights.push(`💰 Focus on booking more high-ticket services to boost daily revenue`);
+  }
+  
+  const html = insights.length > 0 
+    ? insights.map(i => `<div style="margin-bottom:8px;">• ${i}</div>`).join('')
+    : '<div>No insights available yet. Add more data to get recommendations.</div>';
+  
+  insightsDiv.innerHTML = html;
 };
 
 window.refreshAIInsights = async function() {
