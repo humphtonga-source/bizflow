@@ -1,4 +1,26 @@
-// ═══════════════════════════════════════════════════════════════════════════
+// BIZFLOW SALON - COMPLETE MODULE
+async function MODULE_INIT() {
+  console.log('Salon module loaded');
+  await initializeDashboardData();
+  await renderDashboard();
+  await loadAppointments();
+  await window.loadStaff();
+  await window.loadServices();
+  await window.loadFinance();
+  await window.loadClients();
+  await window.loadInventory();
+  await window.loadReports();
+  await window.loadSettings();
+  await window.loadOtherPanes();
+  setupRealtimeUpdates();
+  console.log('Salon module ready');
+}
+
+window.loadOtherPanes = async function() {
+  // All panes have dedicated load functions
+};
+
+
 // BIZFLOW SALON - ADMIN & EMPLOYEE DASHBOARDS
 // SwiftStake Method: Modular, Real-time, Simple
 // ═══════════════════════════════════════════════════════════════════════════
@@ -17,15 +39,6 @@ let DASHBOARD_STATE = {
 // MAIN INIT
 // ═══════════════════════════════════════════════════════════════════════════
 
-async function MODULE_INIT() {
-  console.log('Salon module loaded');
-  await initializeDashboardData();
-  await renderDashboard();
-  await loadAppointments();
-  await loadOtherPanes();
-  setupRealtimeUpdates();
-  console.log('Salon module ready');
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // INITIALIZE DATA
@@ -414,21 +427,6 @@ window.loadAppointments = async function() {
 // OTHER PANES
 // ═══════════════════════════════════════════════════════════════════════════
 
-window.loadOtherPanes = async function() {
-  const panes = {
-    'pane-staff': '👥 Staff',
-    'pane-services': '✂️ Services',
-    'pane-finance': '💰 Finance',
-    'pane-clients': '👤 Clients',
-    'pane-inventory': '📦 Inventory',
-    'pane-reports': '📊 Reports',
-    'pane-settings': '⚙️ Settings'
-  };
-  Object.entries(panes).forEach(([id, title]) => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = `<div style="padding:20px;"><h2>${title}</h2><div style="color:var(--txt3);">Coming soon...</div></div>`;
-  });
-};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // REAL-TIME UPDATES
@@ -448,11 +446,12 @@ function setupRealtimeUpdates() {
     })
     .subscribe();
 }
-// ═══════════════════════════════════════════════════════════════════════════
+
 // BIZFLOW SALON - APPOINTMENTS (ADMIN & EMPLOYEE)
 // SwiftStake Method: Modular, Real-time, Simple
 // ═══════════════════════════════════════════════════════════════════════════
 
+window.loadAppointments = async function() {
   const appts = document.getElementById('pane-appointments');
   if (!appts) return;
   
@@ -898,7 +897,7 @@ window.markAvailable = async function(apptId) {
 window.filterAppointments = function() {
   window.renderAdminAppointments();
 };
-// ═══════════════════════════════════════════════════════════════════════════
+
 // BIZFLOW SALON - STAFF MANAGEMENT (ADMIN ONLY)
 // SwiftStake Method: Modular, Real-time, Simple
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1159,7 +1158,7 @@ window.deleteStaff = async function(stylistId) {
 window.editStaff = async function(stylistId) {
   alert('Edit feature coming soon! For now, delete and re-add.');
 };
-// ═══════════════════════════════════════════════════════════════════════════
+
 // BIZFLOW SALON - SERVICES MANAGEMENT
 // SwiftStake Method: Modular, Real-time, Simple
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1439,7 +1438,7 @@ window.printServices = async function() {
     alert('Error: ' + err.message);
   }
 };
-// ═══════════════════════════════════════════════════════════════════════════
+
 // BIZFLOW SALON - FINANCE MANAGEMENT
 // SwiftStake Method: Modular, Real-time, Simple
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1854,7 +1853,7 @@ function getDateRange(period) {
     end: now.toISOString()
   };
 }
-// ═══════════════════════════════════════════════════════════════════════════
+
 // BIZFLOW SALON - CLIENTS MANAGEMENT (ADMIN ONLY)
 // SwiftStake Method: Modular, Real-time, Simple
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2107,7 +2106,7 @@ window.appointmentFromClient = async function(clientId, clientName, clientPhone)
     setTimeout(() => apptModal.style.display = 'block', 100);
   }
 };
-// ═══════════════════════════════════════════════════════════════════════════
+
 // BIZFLOW SALON - INVENTORY MANAGEMENT (ADMIN ONLY)
 // SwiftStake Method: Modular, Real-time, Simple
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2338,7 +2337,7 @@ window.deleteProduct = async function(productId) {
     alert('Error: ' + err.message);
   }
 };
-// ═══════════════════════════════════════════════════════════════════════════
+
 // BIZFLOW SALON - REPORTS & ANALYTICS (ADMIN ONLY)
 // SwiftStake Method: Modular, Real-time, Simple
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2642,7 +2641,7 @@ function getDateRange(period) {
     end: now.toISOString()
   };
 }
-// ═══════════════════════════════════════════════════════════════════════════
+
 // BIZFLOW SALON - SETTINGS (ADMIN ONLY)
 // SwiftStake Method: Modular, Real-time, Simple
 // ═══════════════════════════════════════════════════════════════════════════
@@ -3004,7 +3003,4 @@ window.deleteEmployee = async function(stylistId) {
   } catch (err) {
     alert('Error: ' + err.message);
   }
-};
-
-  // All panes have dedicated load functions
 };
