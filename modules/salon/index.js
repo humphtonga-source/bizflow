@@ -453,7 +453,6 @@ function setupRealtimeUpdates() {
 // SwiftStake Method: Modular, Real-time, Simple
 // ═══════════════════════════════════════════════════════════════════════════
 
-window.loadAppointments = async function() {
   const appts = document.getElementById('pane-appointments');
   if (!appts) return;
   
@@ -3007,6 +3006,5 @@ window.deleteEmployee = async function(stylistId) {
   }
 };
 
-window.loadOtherPanes = async function() {
   // All panes have dedicated load functions
 };
