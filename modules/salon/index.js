@@ -976,10 +976,12 @@ async function renderStaffPage(container) {
 window.renderStaffList = async function() {
   try {
     // Get all stylists with their agreements
-    const { data: stylists } = await STATE.supabase
+    const { data: stylists, error: stylistsError } = await STATE.supabase
       .from('salon_stylists')
-      .select('*')
+      .select('id,name,phone,role')
       .eq('business_id', STATE.businessId);
+    
+    if (stylistsError) throw stylistsError;
     
     if (!stylists || stylists.length === 0) {
       document.getElementById('staff-list').innerHTML = '<div style="color:var(--txt3);text-align:center;padding:40px;">No staff members yet</div>';
@@ -999,14 +1001,15 @@ window.renderStaffList = async function() {
       });
     }
     
-    // Build HTML grouped by shop (or just list if single shop)
+    // Build HTML - permissions will default to empty if column doesn't exist
     const staffHtml = stylists.map(s => {
       const agreement = agreementMap[s.id];
       const agreementText = agreement ? 
         `${agreement.agreement_type}${agreement.commission_percent ? ` (${agreement.commission_percent}%)` : ''}${agreement.monthly_salary ? ` (KES ${agreement.monthly_salary})` : ''}` 
         : 'No agreement';
       
-      const permissions = JSON.parse(s.permissions || '{}');
+      // Safely handle permissions if column exists
+      const permissions = s.permissions ? JSON.parse(s.permissions) : {};
       
       return `
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;">
@@ -1018,6 +1021,7 @@ window.renderStaffList = async function() {
               <div style="font-size:12px;color:var(--txt3);margin-top:2px;">💼 ${agreementText}</div>
               
               <!-- PERMISSIONS -->
+              ${Object.keys(permissions).length > 0 ? `
               <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
                 <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;">Permissions:</div>
                 <div style="display:flex;gap:12px;flex-wrap:wrap;">
@@ -1026,6 +1030,7 @@ window.renderStaffList = async function() {
                   <span style="padding:2px 6px;background:${permissions.can_manage_staff ? 'var(--green)' : 'var(--border)'};color:#000;border-radius:3px;font-size:10px;font-weight:700;">👥 Staff</span>
                 </div>
               </div>
+              ` : ''}
             </div>
             
             <div style="display:flex;flex-direction:column;gap:6px;">
