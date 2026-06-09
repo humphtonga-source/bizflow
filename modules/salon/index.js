@@ -1,21 +1,20 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// BIZFLOW SALON - ADMIN & EMPLOYEE DASHBOARDS
-// SwiftStake Method: Modular, Real-time, Simple
+// BIZFLOW SALON - COMPLETE MODULE (CLEAN VERSION)
+// SwiftStake Method: Single File, All Features
 // ═══════════════════════════════════════════════════════════════════════════
 
-// GLOBAL STATE FOR DASHBOARDS
-let DASHBOARD_STATE = {
-  currentShop: null,
-  allShops: [],
-  allStylists: [],
-  todayCheckins: [],
-  todayRevenue: 0,
-  selectedStylist: null
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// MAIN INIT
-// ═══════════════════════════════════════════════════════════════════════════
+// Import all modules in sequence
+const SALON_MODULES = [
+  'dashboard-complete-swiftstake.js',
+  'appointments-complete-final.js',
+  'staff.js',
+  'services.js',
+  'finance.js',
+  'clients.js',
+  'inventory.js',
+  'reports.js',
+  'settings.js'
+];
 
 async function MODULE_INIT() {
   console.log('Salon module loaded');
@@ -30,6 +29,20 @@ async function MODULE_INIT() {
   await window.loadReports();
   await window.loadSettings();
   await window.loadOtherPanes();
+  setupRealtimeUpdates();
+  console.log('Salon module ready');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DASHBOARD (from dashboard-complete-swiftstake.js)
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function MODULE_INIT() {
+  console.log('Salon module loaded');
+  await initializeDashboardData();
+  await renderDashboard();
+  await loadAppointments();
+  await loadOtherPanes();
   setupRealtimeUpdates();
   console.log('Salon module ready');
 }
@@ -422,7 +435,19 @@ window.loadAppointments = async function() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 window.loadOtherPanes = async function() {
-  // All panes have dedicated load functions
+  const panes = {
+    'pane-staff': '👥 Staff',
+    'pane-services': '✂️ Services',
+    'pane-finance': '💰 Finance',
+    'pane-clients': '👤 Clients',
+    'pane-inventory': '📦 Inventory',
+    'pane-reports': '📊 Reports',
+    'pane-settings': '⚙️ Settings'
+  };
+  Object.entries(panes).forEach(([id, title]) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = `<div style="padding:20px;"><h2>${title}</h2><div style="color:var(--txt3);">Coming soon...</div></div>`;
+  });
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -443,25 +468,6 @@ function setupRealtimeUpdates() {
     })
     .subscribe();
 }
-// ═══════════════════════════════════════════════════════════════════════════
-// BIZFLOW SALON - APPOINTMENTS (ADMIN & EMPLOYEE)
-// SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
-
-window.loadAppointments = async function() {
-  const appts = document.getElementById('pane-appointments');
-  if (!appts) return;
-  
-  try {
-    if (STATE.userRole === 'owner') {
-      await loadAdminAppointments(appts);
-    } else {
-      await loadEmployeeAppointments(appts);
-    }
-  } catch (err) {
-    console.error('Load appointments error:', err);
-    appts.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
-  }
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -894,25 +900,6 @@ window.markAvailable = async function(apptId) {
 window.filterAppointments = function() {
   window.renderAdminAppointments();
 };
-// ═══════════════════════════════════════════════════════════════════════════
-// BIZFLOW SALON - STAFF MANAGEMENT (ADMIN ONLY)
-// SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
-
-window.loadStaff = async function() {
-  const staff = document.getElementById('pane-staff');
-  if (!staff) return;
-  
-  // Admin only
-  if (STATE.userRole !== 'owner') {
-    staff.innerHTML = '<div style="padding:20px;color:var(--red);">❌ Access denied. Admin only.</div>';
-    return;
-  }
-  
-  try {
-    await renderStaffPage(staff);
-  } catch (err) {
-    console.error('Load staff error:', err);
     staff.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
   }
 };
@@ -1155,25 +1142,6 @@ window.deleteStaff = async function(stylistId) {
 window.editStaff = async function(stylistId) {
   alert('Edit feature coming soon! For now, delete and re-add.');
 };
-// ═══════════════════════════════════════════════════════════════════════════
-// BIZFLOW SALON - SERVICES MANAGEMENT
-// SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
-
-window.loadServices = async function() {
-  const services = document.getElementById('pane-services');
-  if (!services) return;
-  
-  try {
-    await renderServicesPage(services);
-  } catch (err) {
-    console.error('Load services error:', err);
-    services.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
-  }
-};
-
-async function renderServicesPage(container) {
-  container.innerHTML = `
     <div style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <h2 style="font-size:20px;font-weight:800;margin:0;">Services</h2>
@@ -1435,25 +1403,6 @@ window.printServices = async function() {
     alert('Error: ' + err.message);
   }
 };
-// ═══════════════════════════════════════════════════════════════════════════
-// BIZFLOW SALON - FINANCE MANAGEMENT
-// SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
-
-window.loadFinance = async function() {
-  const finance = document.getElementById('pane-finance');
-  if (!finance) return;
-  
-  try {
-    if (STATE.userRole === 'owner') {
-      await loadAdminFinance(finance);
-    } else {
-      await loadEmployeeFinance(finance);
-    }
-  } catch (err) {
-    console.error('Load finance error:', err);
-    finance.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
-  }
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1850,25 +1799,6 @@ function getDateRange(period) {
     end: now.toISOString()
   };
 }
-// ═══════════════════════════════════════════════════════════════════════════
-// BIZFLOW SALON - CLIENTS MANAGEMENT (ADMIN ONLY)
-// SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
-
-window.loadClients = async function() {
-  const clients = document.getElementById('pane-clients');
-  if (!clients) return;
-  
-  // Admin only
-  if (STATE.userRole !== 'owner') {
-    clients.innerHTML = '<div style="padding:20px;color:var(--red);">❌ Access denied. Admin only.</div>';
-    return;
-  }
-  
-  try {
-    await renderClientsPage(clients);
-  } catch (err) {
-    console.error('Load clients error:', err);
     clients.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
   }
 };
@@ -2103,25 +2033,6 @@ window.appointmentFromClient = async function(clientId, clientName, clientPhone)
     setTimeout(() => apptModal.style.display = 'block', 100);
   }
 };
-// ═══════════════════════════════════════════════════════════════════════════
-// BIZFLOW SALON - INVENTORY MANAGEMENT (ADMIN ONLY)
-// SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
-
-window.loadInventory = async function() {
-  const inventory = document.getElementById('pane-inventory');
-  if (!inventory) return;
-  
-  // Admin only
-  if (STATE.userRole !== 'owner') {
-    inventory.innerHTML = '<div style="padding:20px;color:var(--red);">❌ Access denied. Admin only.</div>';
-    return;
-  }
-  
-  try {
-    await renderInventoryPage(inventory);
-  } catch (err) {
-    console.error('Load inventory error:', err);
     inventory.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
   }
 };
@@ -2334,25 +2245,6 @@ window.deleteProduct = async function(productId) {
     alert('Error: ' + err.message);
   }
 };
-// ═══════════════════════════════════════════════════════════════════════════
-// BIZFLOW SALON - REPORTS & ANALYTICS (ADMIN ONLY)
-// SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
-
-window.loadReports = async function() {
-  const reports = document.getElementById('pane-reports');
-  if (!reports) return;
-  
-  // Admin only
-  if (STATE.userRole !== 'owner') {
-    reports.innerHTML = '<div style="padding:20px;color:var(--red);">❌ Access denied. Admin only.</div>';
-    return;
-  }
-  
-  try {
-    await renderReportsPage(reports);
-  } catch (err) {
-    console.error('Load reports error:', err);
     reports.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
   }
 };
@@ -2638,25 +2530,6 @@ function getDateRange(period) {
     end: now.toISOString()
   };
 }
-// ═══════════════════════════════════════════════════════════════════════════
-// BIZFLOW SALON - SETTINGS (ADMIN ONLY)
-// SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
-
-window.loadSettings = async function() {
-  const settings = document.getElementById('pane-settings');
-  if (!settings) return;
-  
-  // Admin only
-  if (STATE.userRole !== 'owner') {
-    settings.innerHTML = '<div style="padding:20px;color:var(--red);">❌ Access denied. Admin only.</div>';
-    return;
-  }
-  
-  try {
-    await renderSettingsPage(settings);
-  } catch (err) {
-    console.error('Load settings error:', err);
     settings.innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${err.message}</div>`;
   }
 };
@@ -3000,4 +2873,9 @@ window.deleteEmployee = async function(stylistId) {
   } catch (err) {
     alert('Error: ' + err.message);
   }
+};
+
+// EMPTY PANES (all have dedicated functions)
+window.loadOtherPanes = async function() {
+  // All panes have dedicated load functions
 };
