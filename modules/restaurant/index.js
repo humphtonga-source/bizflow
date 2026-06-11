@@ -82,9 +82,10 @@ window.loadKPIs = async function() {
     const today = new Date().toISOString().split('T')[0];
     const { data: orders } = await STATE.supabase
       .from('restaurant_orders')
-      .select('total_amount')
+      .select('total_amount,created_at')
       .eq('business_id', STATE.businessId)
-      .eq('order_date', today)
+      .gte('created_at', today + 'T00:00:00')
+      .lte('created_at', today + 'T23:59:59')
       .eq('status', 'completed');
     
     const sales = orders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0;
