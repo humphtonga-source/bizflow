@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>BizFlow - Sign In</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #12151c;
+      --bg2: #1a1f2e;
+      --border: #2a3050;
+      --gold: #f0a500;
+      --text: #e8eaf0;
+      --txt3: #6b7499;
+      --green: #22c55e;
+      --red: #ef4444;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--bg) 0%, #1a1f2e 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .auth-container {
+      width: 100%;
+      max-width: 420px;
+    }
+    
+    .auth-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px;
+    }
+    
+    .logo {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+      text-align: center;
+    }
+    
+    .logo span { color: var(--gold); }
+    
+    .tagline {
+      font-size: 13px;
+      color: var(--txt3);
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--txt3);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(240, 165, 0, 0.1);
+    }
+    
+    .form-input::placeholder {
+      color: var(--txt3);
+    }
+    
+    .submit-btn {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--gold);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 24px;
+    }
+    
+    .submit-btn:hover {
+      background: #e09500;
+    }
+    
+    .submit-btn:disabled {
+      background: var(--txt3);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    
+    .toggle-form {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--txt3);
+    }
+    
+    .toggle-form button {
+      background: none;
+      border: none;
+      color: var(--gold);
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: 4px;
+    }
+    
+    .toggle-form button:hover {
+      text-decoration: underline;
+    }
+    
+    .error-message {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--red);
+      border-radius: 6px;
+      padding: 12px;
+      color: var(--red);
+      font-size: 12px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    
+    .error-message.show {
+      display: block;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: var(--txt3);
+    }
+    
+    .spinner {
+      border: 2px solid var(--border);
+      border-top: 2px solid var(--gold);
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 8px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="logo">Biz <span>Flow</span></div>
+    <p class="tagline">Manage your business, anywhere, anytime</p>
+    
+    <div class="error-message" id="errorMessage"></div>
+    
+    <!-- SIGN IN FORM -->
+    <div id="signInForm">
+      <h2 style="font-size:18px;margin-bottom:24px;font-weight:700;">Sign In</h2>
+      
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="signinEmail" class="form-input" placeholder="your@email.com">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="signinPassword" class="form-input" placeholder="••••••••">
+      </div>
+      
+      <button class="submit-btn" onclick="window.signIn()" id="signinBtn">Sign In</button>
+      
+      <div class="toggle-form">
+        Don't have an account?
+        <button onclick="window.toggleForm()">Sign Up</button>
+      </div>
+    </div>
+    
+    <!-- SIGN UP FORM (HIDDEN) -->
+    <div id="signUpForm" style="display:none;">
+      <h2 style="font-size:18px;margin-bottom:24px;font-weight:700;">Create Account</h2>
+      
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="signupEmail" class="form-input" placeholder="your@email.com">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="signupPassword" class="form-input" placeholder="••••••••">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input type="password" id="signupPasswordConfirm" class="form-input" placeholder="••••••••">
+      </div>
+      
+      <button class="submit-btn" onclick="window.signUp()" id="signupBtn">Create Account</button>
+      
+      <div class="toggle-form">
+        Already have an account?
+        <button onclick="window.toggleForm()">Sign In</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  const SUPABASE_URL = 'https://piaphpiowvgalvduacpt.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpYXBocGlvd3ZnYWx2ZHVhY3B0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2OTg4MDUsImV4cCI6MjA5NjI3NDgwNX0.lEOrhLB0AaCzsDXWzXHkvth83-KtXKOpTYe8ndi3bFc';
+  
+  let supabaseClient = null;
+  
+  // Wait for Supabase to load
+  async function initializeSupabase() {
+    return new Promise((resolve) => {
+      const checkInterval = setInterval(() => {
+        if (window.supabase && window.supabase.createClient) {
+          clearInterval(checkInterval);
+          supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          resolve();
+        }
+      }, 50);
+    });
+  }
+  
+  window.toggleForm = function() {
+    const signInForm = document.getElementById('signInForm');
+    const signUpForm = document.getElementById('signUpForm');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    signInForm.style.display = signInForm.style.display === 'none' ? 'block' : 'none';
+    signUpForm.style.display = signUpForm.style.display === 'none' ? 'block' : 'none';
+    errorMessage.classList.remove('show');
+  };
+  
+  window.showError = function(message) {
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    errorMessage.classList.add('show');
+  };
+  
+  window.hideError = function() {
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.classList.remove('show');
+  };
+  
+  window.signIn = async function() {
+    try {
+      window.hideError();
+      
+      const email = document.getElementById('signinEmail')?.value.trim();
+      const password = document.getElementById('signinPassword')?.value.trim();
+      
+      if (!email || !password) {
+        window.showError('Please enter email and password');
+        return;
+      }
+      
+      const btn = document.getElementById('signinBtn');
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+      
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+      
+      if (error) throw error;
+      
+      // Redirect to business selector
+      window.location.href = '/bizflow/select-business.html';
+      
+    } catch (err) {
+      window.showError(err.message);
+      document.getElementById('signinBtn').disabled = false;
+      document.getElementById('signinBtn').textContent = 'Sign In';
+    }
+  };
+  
+  window.signUp = async function() {
+    try {
+      window.hideError();
+      
+      const email = document.getElementById('signupEmail')?.value.trim();
+      const password = document.getElementById('signupPassword')?.value.trim();
+      const passwordConfirm = document.getElementById('signupPasswordConfirm')?.value.trim();
+      
+      if (!email || !password || !passwordConfirm) {
+        window.showError('Please fill all fields');
+        return;
+      }
+      
+      if (password !== passwordConfirm) {
+        window.showError('Passwords do not match');
+        return;
+      }
+      
+      if (password.length < 6) {
+        window.showError('Password must be at least 6 characters');
+        return;
+      }
+      
+      const btn = document.getElementById('signupBtn');
+      btn.disabled = true;
+      btn.textContent = 'Creating account...';
+      
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password
+      });
+      
+      if (error) throw error;
+      
+      // Show success message
+      window.showError('Account created! Please check your email to verify, then sign in.');
+      
+      // Reset form
+      document.getElementById('signupEmail').value = '';
+      document.getElementById('signupPassword').value = '';
+      document.getElementById('signupPasswordConfirm').value = '';
+      
+      btn.disabled = false;
+      btn.textContent = 'Create Account';
+      
+      // Switch to sign in after 3 seconds
+      setTimeout(() => {
+        window.toggleForm();
+      }, 3000);
+      
+    } catch (err) {
+      window.showError(err.message);
+      document.getElementById('signupBtn').disabled = false;
+      document.getElementById('signupBtn').textContent = 'Create Account';
+    }
+  };
+  
+  // Check if already signed in
+  async function checkAuth() {
+    try {
+      await initializeSupabase();
+      
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      
+      if (session) {
+        // Already signed in, redirect to business selector
+        window.location.href = '/bizflow/select-business.html';
+      }
+    } catch (err) {
+      console.error('Auth check error:', err);
+    }
+  }
+  
+  // Check auth on page load
+  window.addEventListener('load', checkAuth);
+  
+  // Allow Enter key to submit
+  document.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      const signInForm = document.getElementById('signInForm');
+      const signUpForm = document.getElementById('signUpForm');
+      
+      if (signInForm.style.display !== 'none') {
+        window.signIn();
+      } else {
+        window.signUp();
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
