@@ -448,15 +448,4 @@ window.loadSuppliers = async function() {
 window.loadClients = async function() {
   const container = document.getElementById('pane-clients');
   if (!container) return;
-  container.innerHTML = `<div style="padding:20px;color:var(--txt3);"><h2>👤 Clients</h2><p>Coming soon...</p></div>`;
-};
-window.loadReports = async function() {
-  const container = document.getElementById('pane-reports');
-  if (!container) return;
-  container.innerHTML = `<div style="padding:20px;color:var(--txt3);"><h2>📊 Reports</h2><p>Coming soon...</p></div>`;
-};
-window.loadSettings = async function() {
-  const container = document.getElementById('pane-settings');
-  if (!container) return;
-  container.innerHTML = `<div style="padding:20px;color:var(--txt3);"><h2>⚙️ Settings</h2><p>Coming soon...</p></div>`;
-};
+  container.innerHTML = `<div style="padding:20px;color:var(--txt3
