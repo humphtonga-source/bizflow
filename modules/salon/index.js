@@ -23,7 +23,7 @@ window.loadOtherPanes = async function() {
 
 // BIZFLOW SALON - ADMIN & EMPLOYEE DASHBOARDS
 // SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 // GLOBAL STATE FOR DASHBOARDS
 let DASHBOARD_STATE = {
@@ -35,14 +35,14 @@ let DASHBOARD_STATE = {
   selectedStylist: null
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // MAIN INIT
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // INITIALIZE DATA
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 async function initializeDashboardData() {
   try {
@@ -67,9 +67,9 @@ async function initializeDashboardData() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // RENDER DASHBOARD (ADMIN vs EMPLOYEE)
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 window.renderDashboard = async function() {
   const dashboard = document.getElementById('pane-dashboard');
@@ -82,9 +82,9 @@ window.renderDashboard = async function() {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // ADMIN DASHBOARD
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 async function renderAdminDashboard(container) {
   try {
@@ -186,9 +186,9 @@ async function renderAdminDashboard(container) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // EMPLOYEE DASHBOARD
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 async function renderEmployeeDashboard(container) {
   try {
@@ -324,9 +324,9 @@ async function renderEmployeeDashboard(container) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // ACTIONS
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 window.toggleShopStatus = async function() {
   try {
@@ -406,9 +406,9 @@ window.handleCheckIn = async function() {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // APPOINTMENTS (from before)
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 window.loadAppointments = async function() {
   const appts = document.getElementById('pane-appointments');
@@ -423,14 +423,14 @@ window.loadAppointments = async function() {
   `;
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // OTHER PANES
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // REAL-TIME UPDATES
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 function setupRealtimeUpdates() {
   STATE.supabase
@@ -449,7 +449,7 @@ function setupRealtimeUpdates() {
 
 // BIZFLOW SALON - APPOINTMENTS (ADMIN & EMPLOYEE)
 // SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 window.loadAppointments = async function() {
   const appts = document.getElementById('pane-appointments');
@@ -467,9 +467,9 @@ window.loadAppointments = async function() {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // ADMIN APPOINTMENTS
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 async function loadAdminAppointments(container) {
   container.innerHTML = `
@@ -589,9 +589,9 @@ window.renderAdminAppointments = async function() {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // EMPLOYEE APPOINTMENTS
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 async function loadEmployeeAppointments(container) {
   try {
@@ -730,9 +730,9 @@ window.renderEmployeeAppointments = async function() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // SHARED ACTIONS
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 window.openAddApptModal = function() {
   const modal = document.getElementById('appt-modal');
@@ -900,7 +900,7 @@ window.filterAppointments = function() {
 
 // BIZFLOW SALON - STAFF MANAGEMENT (ADMIN ONLY)
 // SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 window.loadStaff = async function() {
   const staff = document.getElementById('pane-staff');
@@ -1161,7 +1161,7 @@ window.editStaff = async function(stylistId) {
 
 // BIZFLOW SALON - SERVICES MANAGEMENT
 // SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 window.loadServices = async function() {
   const services = document.getElementById('pane-services');
@@ -1331,9 +1331,9 @@ window.editService = function(serviceId) {
   alert('Edit feature coming soon!');
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // DOWNLOAD & PRINT
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 window.downloadServices = async function() {
   try {
@@ -1441,7 +1441,7 @@ window.printServices = async function() {
 
 // BIZFLOW SALON - FINANCE MANAGEMENT
 // SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 window.loadFinance = async function() {
   const finance = document.getElementById('pane-finance');
@@ -1459,9 +1459,9 @@ window.loadFinance = async function() {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // ADMIN FINANCE
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 async function loadAdminFinance(container) {
   container.innerHTML = `
@@ -1701,9 +1701,9 @@ window.saveExpense = async function() {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // EMPLOYEE FINANCE
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 async function loadEmployeeFinance(container) {
   try {
@@ -1826,9 +1826,9 @@ window.renderEmployeeFinance = async function() {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 // HELPER FUNCTION
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 function getDateRange(period) {
   const now = new Date();
@@ -1856,7 +1856,7 @@ function getDateRange(period) {
 
 // BIZFLOW SALON - CLIENTS MANAGEMENT (ADMIN ONLY)
 // SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 window.loadClients = async function() {
   const clients = document.getElementById('pane-clients');
@@ -2109,7 +2109,7 @@ window.appointmentFromClient = async function(clientId, clientName, clientPhone)
 
 // BIZFLOW SALON - INVENTORY MANAGEMENT (ADMIN ONLY)
 // SwiftStake Method: Modular, Real-time, Simple
-// ═══════════════════════════════════════════════════════════════════════════
+// 
 
 window.loadInventory = async function() {
   const inventory = document.getElementById('pane-inventory');
