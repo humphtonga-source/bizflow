@@ -1,10 +1,9 @@
-// BIZFLOW SALON MODULE - CLEAN VERSION
+// BIZFLOW SALON MODULE - ENHANCED WITH REAL DATA
 async function MODULE_INIT() {
   console.log('[Salon] module loaded');
-  
   try {
-    // Initialize dashboard
     await initSalonDashboard();
+    setupSalonMenu();
     console.log('[Salon] module ready');
   } catch (err) {
     console.error('[Salon] init error:', err);
@@ -14,11 +13,108 @@ async function MODULE_INIT() {
 window.initSalonDashboard = async function() {
   try {
     const container = document.getElementById('pane-dashboard');
+    if (!container) return;
     
-    container.innerHTML = '<div style="padding:20px;"><h2 style="font-size:24px;font-weight:700;margin-bottom:20px;">Salon Dashboard</h2><div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:20px;"><h3 style="font-size:16px;font-weight:700;margin-bottom:10px;">Welcome to Your Salon</h3><p style="color:var(--txt3);font-size:14px;">Manage appointments, staff, and services from here.</p></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;"><div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;text-align:center;"><div style="font-size:32px;font-weight:800;color:var(--gold);">0</div><div style="font-size:13px;color:var(--txt3);margin-top:8px;">Today Appointments</div></div><div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;text-align:center;"><div style="font-size:32px;font-weight:800;color:var(--gold);">KES 0</div><div style="font-size:13px;color:var(--txt3);margin-top:8px;">Today Revenue</div></div><div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;text-align:center;"><div style="font-size:32px;font-weight:800;color:var(--gold);">0</div><div style="font-size:13px;color:var(--txt3);margin-top:8px;">Staff Present</div></div></div></div>';
+    // Fetch real data
+    const today = new Date().toISOString().split('T')[0];
+    const { data: todayAppts } = await STATE.supabase.from('salon_appointments').select('*').eq('business_id', STATE.businessId).eq('date', today);
+    const { data: allAppts } = await STATE.supabase.from('salon_appointments').select('*').eq('business_id', STATE.businessId).order('date', { ascending: false }).limit(5);
+    const { data: stylists } = await STATE.supabase.from('salon_stylists').select('*').eq('business_id', STATE.businessId);
     
-    setupSalonMenu();
+    const todayCount = todayAppts ? todayAppts.length : 0;
+    const doneCount = todayAppts ? todayAppts.filter(a => a.status === 'done').length : 0;
+    const ongoingCount = todayAppts ? todayAppts.filter(a => a.status === 'ongoing').length : 0;
+    const stylistCount = stylists ? stylists.length : 0;
     
+    const recentAppts = allAppts && allAppts.length > 0 ? allAppts.map(a => `<div style="padding:12px;background:var(--bg3);border-left:3px solid ${a.status === 'done' ? 'var(--green)' : a.status === 'ongoing' ? 'var(--gold)' : 'var(--border)'};border-radius:4px;"><div style="font-weight:700;font-size:13px;">${a.client_name}</div><div style="font-size:11px;color:var(--txt3);margin-top:4px;">📅 ${a.date} • ${a.time}</div></div>`).join('') : '<div style="color:var(--txt3);text-align:center;padding:20px;">No appointments yet</div>';
+    
+    container.innerHTML = `
+      <div style="padding:20px;overflow-y:auto;">
+        <!-- HEADER -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;">
+          <div>
+            <h1 style="font-size:28px;font-weight:800;margin:0;margin-bottom:4px;">Salon Dashboard</h1>
+            <p style="color:var(--txt3);font-size:13px;margin:0;">Today is ${new Date().toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
+          <button onclick="window.quickAction('newAppt')" style="padding:12px 20px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">+ New Appointment</button>
+        </div>
+        
+        <!-- KPI CARDS -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:30px;">
+          <!-- TODAY APPOINTMENTS -->
+          <div onclick="window.selectSalonPane('appointments')" style="background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;transition:all 0.3s;box-shadow:0 4px 12px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 20px rgba(240,165,0,0.2)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+              <div>
+                <div style="font-size:12px;color:var(--txt3);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Today Appointments</div>
+                <div style="font-size:40px;font-weight:900;color:var(--gold);">${todayCount}</div>
+              </div>
+              <div style="font-size:32px;">📅</div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+              <div style="flex:1;">
+                <div style="font-size:11px;color:var(--txt3);">Completed</div>
+                <div style="font-size:18px;font-weight:800;color:var(--green);">${doneCount}</div>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:11px;color:var(--txt3);">In Progress</div>
+                <div style="font-size:18px;font-weight:800;color:var(--gold);">${ongoingCount}</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- STAFF -->
+          <div onclick="window.selectSalonPane('staff')" style="background:linear-gradient(135deg,#1e3a5f,#2d5a8c);border:1px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;transition:all 0.3s;box-shadow:0 4px 12px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 20px rgba(45,90,140,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+              <div>
+                <div style="font-size:12px;color:var(--txt3);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Team Members</div>
+                <div style="font-size:40px;font-weight:900;color:#64d5ff;">${stylistCount}</div>
+              </div>
+              <div style="font-size:32px;">👥</div>
+            </div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+              <div style="font-size:11px;color:var(--txt3);">Ready to serve</div>
+            </div>
+          </div>
+          
+          <!-- REVENUE (Placeholder) -->
+          <div style="background:linear-gradient(135deg,#2d5f1f,#3d7f2f);border:1px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;transition:all 0.3s;box-shadow:0 4px 12px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 20px rgba(61,127,47,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+              <div>
+                <div style="font-size:12px;color:var(--txt3);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Today Revenue</div>
+                <div style="font-size:40px;font-weight:900;color:var(--green);">KES 0</div>
+              </div>
+              <div style="font-size:32px;">💰</div>
+            </div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+              <div style="font-size:11px;color:var(--txt3);">From ${todayCount} appointments</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- RECENT APPOINTMENTS & QUICK ACTIONS -->
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+          <!-- RECENT APPOINTMENTS -->
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;">
+            <h3 style="font-size:16px;font-weight:800;margin:0 0 16px 0;">Recent Appointments</h3>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              ${recentAppts}
+            </div>
+            <button onclick="window.selectSalonPane('appointments')" style="width:100%;padding:10px;background:var(--border);color:var(--text);border:none;border-radius:6px;font-weight:700;cursor:pointer;margin-top:12px;">View All Appointments</button>
+          </div>
+          
+          <!-- QUICK ACTIONS -->
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;">
+            <h3 style="font-size:16px;font-weight:800;margin:0 0 16px 0;">Quick Actions</h3>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <button onclick="window.quickAction('newAppt')" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),#e09500);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">+ Book Appointment</button>
+              <button onclick="window.selectSalonPane('staff')" style="width:100%;padding:12px;background:var(--border);color:var(--text);border:none;border-radius:6px;font-weight:700;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--border)'">👥 Manage Staff</button>
+              <button onclick="window.selectSalonPane('finance')" style="width:100%;padding:12px;background:var(--border);color:var(--text);border:none;border-radius:6px;font-weight:700;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--border)'">💰 View Finance</button>
+              <button onclick="window.selectSalonPane('clients')" style="width:100%;padding:12px;background:var(--border);color:var(--text);border:none;border-radius:6px;font-weight:700;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--border)'">👤 Manage Clients</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
   } catch (err) {
     console.error('[Salon] dashboard error:', err);
   }
@@ -26,41 +122,132 @@ window.initSalonDashboard = async function() {
 
 window.setupSalonMenu = function() {
   const navMenu = document.getElementById('nav-menu');
+  if (!navMenu) return;
   
   const items = [
     { name: 'Dashboard', id: 'dashboard', icon: '📊' },
     { name: 'Appointments', id: 'appointments', icon: '📅' },
     { name: 'Staff', id: 'staff', icon: '👥' },
-    { name: 'Services', id: 'services', icon: '✂️' },
     { name: 'Finance', id: 'finance', icon: '💰' },
     { name: 'Clients', id: 'clients', icon: '👤' },
-    { name: 'Inventory', id: 'inventory', icon: '📦' },
-    { name: 'Reports', id: 'reports', icon: '📈' },
     { name: 'Settings', id: 'settings', icon: '⚙️' }
   ];
   
-  navMenu.innerHTML = items.map(item => '<button onclick="window.selectSalonPane(\'' + item.id + '\')" style="width:100%;text-align:left;padding:12px 16px;background:none;border:none;color:var(--text);cursor:pointer;font-size:14px;border-left:3px solid transparent;transition:all 0.2s;" onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'none\'">' + item.icon + ' ' + item.name + '</button>').join('');
+  navMenu.innerHTML = items.map(item => `
+    <button onclick="window.selectSalonPane('${item.id}')" 
+      style="width:100%;text-align:left;padding:12px 16px;background:none;border:none;color:var(--text);cursor:pointer;font-size:14px;transition:all 0.2s;"
+      onmouseover="this.style.background='var(--bg3)';this.style.borderLeft='3px solid var(--gold)'"
+      onmouseout="this.style.background='none';this.style.borderLeft='3px solid transparent'">
+      ${item.icon} ${item.name}
+    </button>
+  `).join('');
 };
 
-window.selectSalonPane = function(paneId) {
-  document.querySelectorAll('[id^="pane-"]').forEach(pane => {
-    pane.style.display = 'none';
-  });
-  
+window.selectSalonPane = async function(paneId) {
+  document.querySelectorAll('[id^="pane-"]').forEach(pane => pane.style.display = 'none');
   const pane = document.getElementById('pane-' + paneId);
   if (pane) {
     pane.style.display = 'block';
-    pane.innerHTML = '<div style="padding:20px;"><h2 style="font-size:20px;font-weight:700;margin-bottom:20px;">' + paneId.charAt(0).toUpperCase() + paneId.slice(1) + '</h2><p style="color:var(--txt3);">Coming soon...</p></div>';
+    if (paneId === 'dashboard') await initSalonDashboard();
+    else if (paneId === 'appointments') await loadAppointments();
+    else if (paneId === 'staff') await loadStaff();
+    else pane.innerHTML = '<div style="padding:20px;"><h2 style="font-size:20px;font-weight:700;margin-bottom:20px;">' + paneId.charAt(0).toUpperCase() + paneId.slice(1) + '</h2><p style="color:var(--txt3);">Coming soon...</p></div>';
   }
 };
 
-window.loadAppointments = async function() { console.log('[Salon] appointments loaded'); };
-window.loadStaff = async function() { console.log('[Salon] staff loaded'); };
-window.loadServices = async function() { console.log('[Salon] services loaded'); };
-window.loadFinance = async function() { console.log('[Salon] finance loaded'); };
-window.loadClients = async function() { console.log('[Salon] clients loaded'); };
-window.loadInventory = async function() { console.log('[Salon] inventory loaded'); };
-window.loadReports = async function() { console.log('[Salon] reports loaded'); };
-window.loadSettings = async function() { console.log('[Salon] settings loaded'); };
-window.loadOtherPanes = async function() { console.log('[Salon] other panes loaded'); };
-window.setupRealtimeUpdates = function() { console.log('[Salon] realtime setup'); };
+window.quickAction = function(action) {
+  if (action === 'newAppt') window.selectSalonPane('appointments');
+};
+
+// APPOINTMENTS MODULE
+window.loadAppointments = async function() {
+  const appts = document.getElementById('pane-appointments');
+  if (!appts) return;
+  
+  if (STATE.userRole === 'owner') {
+    appts.innerHTML = '<div style="padding:20px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h2 style="font-size:20px;font-weight:800;margin:0;">Appointments</h2><button onclick="window.openAddApptModal()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">+ New</button></div><div id="appt-modal" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;"><div style="font-weight:700;margin-bottom:12px;">New Appointment</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;"><input id="appt-client-name" placeholder="Client name" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;"><input id="appt-client-phone" placeholder="Phone" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;"><input id="appt-date" type="date" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;"><input id="appt-time" type="time" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;"><input id="appt-style" placeholder="Service" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;grid-column:1/-1;"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button onclick="window.saveAppointment()" style="padding:10px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Save</button><button onclick="window.closeAddApptModal()" style="padding:10px;background:var(--border);color:var(--text);border:none;border-radius:6px;cursor:pointer;">Cancel</button></div></div><div id="appt-list" style="display:flex;flex-direction:column;gap:10px;"></div></div>';
+    await window.renderAppointments();
+  } else {
+    appts.innerHTML = '<div style="padding:20px;color:var(--txt3);">Access denied</div>';
+  }
+};
+
+window.renderAppointments = async function() {
+  const { data: appointments } = await STATE.supabase.from('salon_appointments').select('*').eq('business_id', STATE.businessId).order('date', { ascending: false });
+  const list = document.getElementById('appt-list');
+  if (!list) return;
+  if (!appointments || appointments.length === 0) { list.innerHTML = '<div style="text-align:center;color:var(--txt3);padding:40px;">No appointments</div>'; return; }
+  const html = appointments.map(a => '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;"><div style="display:flex;justify-content:space-between;"><div><div style="font-weight:700;font-size:13px;">' + a.client_name + '</div><div style="font-size:12px;color:var(--txt3);margin-top:4px;">📅 ' + a.date + ' at ' + a.time + '</div>' + (a.style ? '<div style="font-size:12px;color:var(--txt3);">✂️ ' + a.style + '</div>' : '') + '</div><button onclick="window.deleteAppointment(\'' + a.id + '\')" style="padding:4px 8px;background:var(--red);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button></div></div>').join('');
+  list.innerHTML = html;
+};
+
+window.openAddApptModal = function() { const m = document.getElementById('appt-modal'); if (m) { m.style.display = 'block'; document.getElementById('appt-date').valueAsDate = new Date(); } };
+window.closeAddApptModal = function() { const m = document.getElementById('appt-modal'); if (m) m.style.display = 'none'; };
+window.saveAppointment = async function() {
+  const name = document.getElementById('appt-client-name')?.value.trim();
+  const phone = document.getElementById('appt-client-phone')?.value.trim();
+  const date = document.getElementById('appt-date')?.value;
+  const time = document.getElementById('appt-time')?.value;
+  const style = document.getElementById('appt-style')?.value.trim();
+  if (!name || !date || !time) { alert('Fill required fields'); return; }
+  try {
+    await STATE.supabase.from('salon_appointments').insert([{ business_id: STATE.businessId, client_name: name, client_phone: phone || '', date, time, style: style || '', status: 'pending' }]);
+    window.closeAddApptModal();
+    document.getElementById('appt-client-name').value = '';
+    document.getElementById('appt-client-phone').value = '';
+    document.getElementById('appt-style').value = '';
+    await window.renderAppointments();
+    await initSalonDashboard();
+  } catch (err) { alert('Error: ' + err.message); }
+};
+window.deleteAppointment = async function(id) {
+  if (!confirm('Delete?')) return;
+  try {
+    await STATE.supabase.from('salon_appointments').delete().eq('id', id);
+    await window.renderAppointments();
+    await initSalonDashboard();
+  } catch (err) { alert('Error: ' + err.message); }
+};
+
+// STAFF MODULE
+window.loadStaff = async function() {
+  const staff = document.getElementById('pane-staff');
+  if (!staff) return;
+  if (STATE.userRole !== 'owner') { staff.innerHTML = '<div style="padding:20px;color:var(--red);">Admin only</div>'; return; }
+  staff.innerHTML = '<div style="padding:20px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h2 style="font-size:20px;font-weight:800;margin:0;">Staff</h2><button onclick="window.openAddStaffModal()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">+ Add</button></div><div id="staff-modal" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;"><div style="font-weight:700;margin-bottom:12px;">Add Staff</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;"><input id="staff-name" placeholder="Name" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;"><input id="staff-phone" placeholder="Phone" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button onclick="window.saveStaff()" style="padding:10px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Save</button><button onclick="window.closeAddStaffModal()" style="padding:10px;background:var(--border);color:var(--text);border:none;border-radius:6px;cursor:pointer;">Cancel</button></div></div><div id="staff-list" style="display:flex;flex-direction:column;gap:10px;"></div></div>';
+  await window.renderStaffList();
+};
+window.renderStaffList = async function() {
+  const { data: stylists } = await STATE.supabase.from('salon_stylists').select('*').eq('business_id', STATE.businessId);
+  const list = document.getElementById('staff-list');
+  if (!list) return;
+  if (!stylists || stylists.length === 0) { list.innerHTML = '<div style="text-align:center;color:var(--txt3);padding:40px;">No staff</div>'; return; }
+  const html = stylists.map(s => '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-weight:700;">' + s.name + '</div><div style="font-size:12px;color:var(--txt3);">📞 ' + (s.phone || 'N/A') + '</div></div><button onclick="window.deleteStaff(\'' + s.id + '\')" style="padding:4px 8px;background:var(--red);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button></div></div>').join('');
+  list.innerHTML = html;
+};
+window.openAddStaffModal = function() { const m = document.getElementById('staff-modal'); if (m) m.style.display = 'block'; };
+window.closeAddStaffModal = function() { const m = document.getElementById('staff-modal'); if (m) m.style.display = 'none'; };
+window.saveStaff = async function() {
+  const name = document.getElementById('staff-name')?.value.trim();
+  const phone = document.getElementById('staff-phone')?.value.trim();
+  if (!name) { alert('Enter name'); return; }
+  try {
+    await STATE.supabase.from('salon_stylists').insert([{ business_id: STATE.businessId, name, phone: phone || '' }]);
+    window.closeAddStaffModal();
+    document.getElementById('staff-name').value = '';
+    document.getElementById('staff-phone').value = '';
+    await window.renderStaffList();
+  } catch (err) { alert('Error: ' + err.message); }
+};
+window.deleteStaff = async function(id) {
+  if (!confirm('Delete?')) return;
+  try {
+    await STATE.supabase.from('salon_stylists').delete().eq('id', id);
+    await window.renderStaffList();
+  } catch (err) { alert('Error: ' + err.message); }
+};
+
+// STUBS
+window.loadFinance = async function() { };
+window.loadClients = async function() { };
+window.loadOtherPanes = async function() { };
