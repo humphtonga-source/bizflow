@@ -1,0 +1,122 @@
+/* ============================================
+   BizFlow — core.css
+   Shared variables, reset, typography
+   ============================================ */
+
+:root {
+  /* Background layers */
+  --bg:        #0e1118;
+  --surface:   #151a26;
+  --surface2:  #1d2335;
+  --surface3:  #222840;
+
+  /* Borders */
+  --border:    #252d44;
+  --border2:   #2a3050;
+
+  /* Brand — gold (overridden per client via branding.js) */
+  --gold:      #f0a500;
+  --gold2:     #ffc843;
+  --gold-dim:  rgba(240,165,0,0.12);
+  --gold-border: rgba(240,165,0,0.25);
+
+  /* Status */
+  --green:     #22c55e;
+  --green-dim: rgba(34,197,94,0.12);
+  --red:       #ef4444;
+  --red-dim:   rgba(239,68,68,0.10);
+  --yellow:    #eab308;
+  --yellow-dim:rgba(234,179,8,0.12);
+  --blue:      #3b82f6;
+  --blue-dim:  rgba(59,130,246,0.12);
+  --purple:    #a855f7;
+  --cyan:      #06b6d4;
+
+  /* Text */
+  --text:      #e8eaf0;
+  --text2:     #b0b8d0;
+  --muted:     #6b7499;
+  --muted2:    #8892b0;
+
+  /* Kenya accent */
+  --kenya-red:   #BB0000;
+  --kenya-green: #006600;
+
+  /* Sizing */
+  --topbar-h:   56px;
+  --sidebar-w:  260px;
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+
+  /* Transitions */
+  --ease:       cubic-bezier(.4,0,.2,1);
+}
+
+/* ── RESET ── */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+a { color: var(--gold); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button { font-family: inherit; cursor: pointer; }
+
+img { max-width: 100%; display: block; }
+
+/* ── TYPOGRAPHY ── */
+h1 { font-size: 1.5rem;  font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; }
+h2 { font-size: 1.2rem;  font-weight: 600; letter-spacing: -0.02em; }
+h3 { font-size: 0.95rem; font-weight: 600; letter-spacing: -0.01em; }
+h4 { font-size: 0.82rem; font-weight: 600; }
+p  { line-height: 1.6; }
+
+.text-muted  { color: var(--muted); }
+.text-muted2 { color: var(--muted2); }
+.text-gold   { color: var(--gold); }
+.text-green  { color: var(--green); }
+.text-red    { color: var(--red); }
+.text-yellow { color: var(--yellow); }
+
+.text-sm  { font-size: 0.82rem; }
+.text-xs  { font-size: 0.72rem; }
+.text-lg  { font-size: 1.1rem; }
+
+.font-mono { font-family: 'Space Mono', monospace; }
+.font-bold { font-weight: 700; }
+.font-600  { font-weight: 600; }
+
+.uppercase { text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── UTILITY ── */
+.hidden   { display: none !important; }
+.flex     { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-sm { gap: 8px; }
+.gap-md { gap: 14px; }
+.gap-lg { gap: 20px; }
+.w-full { width: 100%; }
+.mt-sm { margin-top: 8px; }
+.mt-md { margin-top: 16px; }
+.mt-lg { margin-top: 24px; }
