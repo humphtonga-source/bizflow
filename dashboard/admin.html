@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en-KE">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - BizFlow</title>
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <style>
+        .admin-dashboard {
+            padding: var(--spacing-xl);
+        }
+        
+        .welcome-section {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            padding: var(--spacing-2xl);
+            border-radius: var(--radius-xl);
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .welcome-section h2 {
+            color: var(--white);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .dashboard-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            text-decoration: none;
+            color: var(--dark);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .dashboard-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-3px);
+        }
+        
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .card-title {
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .card-description {
+            color: var(--gray);
+            font-size: var(--font-size-sm);
+        }
+        
+        .coming-soon {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .badge-soon {
+            display: inline-block;
+            background: var(--warning);
+            color: var(--white);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-sm);
+            margin-top: var(--spacing-md);
+        }
+    </style>
+</head>
+<body class="dashboard-page">
+    <header class="dashboard-header">
+        <div class="container">
+            <h1>BizFlow</h1>
+            <div class="header-right">
+                <span id="userEmail"></span>
+                <button id="logoutBtn" class="btn btn-outline">Sign Out</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <div class="container">
+            <div class="admin-dashboard">
+                <!-- Welcome Section -->
+                <div class="welcome-section">
+                    <h2 id="welcomeText">Welcome to BizFlow! 🎉</h2>
+                    <p>Your business dashboard is ready. Start by exploring the features below.</p>
+                </div>
+
+                <!-- Dashboard Grid -->
+                <div class="dashboard-grid">
+                    <!-- Finance Management -->
+                    <div class="dashboard-card">
+                        <div class="card-icon">💰</div>
+                        <div class="card-title">Finance Management</div>
+                        <div class="card-description">Track income, expenses & profits in real-time</div>
+                        <div class="badge-soon">Coming Soon</div>
+                    </div>
+
+                    <!-- Staff Management -->
+                    <div class="dashboard-card">
+                        <div class="card-icon">👥</div>
+                        <div class="card-title">Staff Management</div>
+                        <div class="card-description">Schedule shifts & track performance</div>
+                        <div class="badge-soon">Coming Soon</div>
+                    </div>
+
+                    <!-- Inventory -->
+                    <div class="dashboard-card">
+                        <div class="card-icon">📦</div>
+                        <div class="card-title">Inventory</div>
+                        <div class="card-description">Stock taking & auto-reorder alerts</div>
+                        <div class="badge-soon">Coming Soon</div>
+                    </div>
+
+                    <!-- Appointments -->
+                    <div class="dashboard-card">
+                        <div class="card-icon">📅</div>
+                        <div class="card-title">Appointments</div>
+                        <div class="card-description">Schedule & manage customer bookings</div>
+                        <div class="badge-soon">Coming Soon</div>
+                    </div>
+
+                    <!-- Debt Tracking -->
+                    <div class="dashboard-card">
+                        <div class="card-icon">💳</div>
+                        <div class="card-title">Debt Management</div>
+                        <div class="card-description">Track customer & supplier debts</div>
+                        <div class="badge-soon">Coming Soon</div>
+                    </div>
+
+                    <!-- Analytics -->
+                    <div class="dashboard-card">
+                        <div class="card-icon">📊</div>
+                        <div class="card-title">Analytics</div>
+                        <div class="card-description">Real-time business insights & reports</div>
+                        <div class="badge-soon">Coming Soon</div>
+                    </div>
+
+                    <!-- Settings -->
+                    <div class="dashboard-card">
+                        <div class="card-icon">⚙️</div>
+                        <div class="card-title">Settings</div>
+                        <div class="card-description">Configure your account & business</div>
+                        <div class="badge-soon">Coming Soon</div>
+                    </div>
+
+                    <!-- Support -->
+                    <div class="dashboard-card">
+                        <div class="card-icon">💬</div>
+                        <div class="card-title">Support</div>
+                        <div class="card-description">Chat with our support team 24/7</div>
+                        <div class="badge-soon">Coming Soon</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="loadingSpinner" class="loading-spinner hidden">
+        <div class="spinner"></div>
+        <p>Loading your dashboard...</p>
+    </div>
+
+    <script src="../assets/js/supabase-client.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = supabase.getUser();
+            const business = JSON.parse(localStorage.getItem('bizflow_business'));
+            
+            if (!user) {
+                window.location.href = '../auth/signin.html';
+                return;
+            }
+
+            // Display user info
+            document.getElementById('userEmail').textContent = user.email;
+            
+            if (business) {
+                document.getElementById('welcomeText').textContent = `Welcome to ${business.businessName}! 🎉`;
+            }
+
+            // Logout handler
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                supabase.signOut();
+                localStorage.removeItem('bizflow_business');
+                window.location.href = '../index.html';
+            });
+        });
+    </script>
+</body>
+</html>
