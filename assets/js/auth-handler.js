@@ -39,7 +39,7 @@ async function handleSignup(e) {
         showMessage(messageDiv, 'Creating your account...', 'info');
 
         // Format phone to +254
-        const formattedPhone = formatPhone(phone);
+        const formattedPhone = formatPhoneNumber(phone);
 
         const result = await supabase.signUp(email, password, {
             business_name: businessName,
