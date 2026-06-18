@@ -74,10 +74,12 @@ class SupabaseClient {
                 }
                 return { success: true, user, session: data.session };
             } else {
-                return { success: false, error: data.error_description || 'Sign up failed' };
+                const errorMsg = data.error_description || data.message || 'Signup failed';
+                return { success: false, error: errorMsg };
             }
         } catch (error) {
-            return { success: false, error: error.message };
+            console.error('Signup fetch error:', error);
+            return { success: false, error: error.message || 'Network error' };
         }
     }
 
@@ -89,7 +91,10 @@ class SupabaseClient {
                     'Content-Type': 'application/json',
                     'apikey': this.anonKey,
                 },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
             });
 
             const data = await response.json();
@@ -100,13 +105,19 @@ class SupabaseClient {
                     email: data.user.email
                 };
                 this.setUser(user);
-                this.setSession(data);
+                this.setSession({
+                    access_token: data.access_token,
+                    refresh_token: data.refresh_token,
+                    user: data.user
+                });
                 return { success: true, user, session: data };
             } else {
-                return { success: false, error: 'Invalid email or password' };
+                const errorMsg = data.error_description || data.error || 'Invalid credentials';
+                return { success: false, error: errorMsg };
             }
         } catch (error) {
-            return { success: false, error: error.message };
+            console.error('Signin fetch error:', error);
+            return { success: false, error: error.message || 'Network error' };
         }
     }
 
@@ -124,10 +135,12 @@ class SupabaseClient {
             if (response.ok) {
                 return { success: true };
             } else {
-                return { success: false, error: 'Failed to send reset email' };
+                const data = await response.json();
+                return { success: false, error: data.error_description || 'Failed to send reset email' };
             }
         } catch (error) {
-            return { success: false, error: error.message };
+            console.error('Reset password error:', error);
+            return { success: false, error: error.message || 'Network error' };
         }
     }
 
@@ -149,7 +162,7 @@ class SupabaseClient {
                 headers: {
                     'Content-Type': 'application/json',
                     'apikey': this.anonKey,
-                    'Authorization': `Bearer ${this.session?.access_token}`
+                    'Authorization': `Bearer ${this.session?.access_token || ''}`
                 },
                 body: JSON.stringify(data)
             });
@@ -157,6 +170,7 @@ class SupabaseClient {
             const result = await response.json();
             return { success: response.ok, data: result };
         } catch (error) {
+            console.error('Insert error:', error);
             return { success: false, error: error.message };
         }
     }
@@ -182,13 +196,14 @@ class SupabaseClient {
                 method: 'GET',
                 headers: {
                     'apikey': this.anonKey,
-                    'Authorization': `Bearer ${this.session?.access_token}`
+                    'Authorization': `Bearer ${this.session?.access_token || ''}`
                 }
             });
 
             const data = await response.json();
             return { success: response.ok, data };
         } catch (error) {
+            console.error('Query error:', error);
             return { success: false, error: error.message };
         }
     }
@@ -215,7 +230,7 @@ class SupabaseClient {
                 headers: {
                     'Content-Type': 'application/json',
                     'apikey': this.anonKey,
-                    'Authorization': `Bearer ${this.session?.access_token}`
+                    'Authorization': `Bearer ${this.session?.access_token || ''}`
                 },
                 body: JSON.stringify(data)
             });
@@ -223,6 +238,7 @@ class SupabaseClient {
             const result = await response.json();
             return { success: response.ok, data: result };
         } catch (error) {
+            console.error('Update error:', error);
             return { success: false, error: error.message };
         }
     }
