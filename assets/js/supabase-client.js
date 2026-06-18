@@ -161,13 +161,36 @@ class SupabaseClient {
                 headers: {
                     'Content-Type': 'application/json',
                     'apikey': this.anonKey,
-                    'Authorization': `Bearer ${this.session?.access_token || ''}`
+                    'Authorization': `Bearer ${this.session?.access_token || ''}`,
+                    'Prefer': 'return=minimal'
                 },
                 body: JSON.stringify(data)
             });
 
-            const result = await response.json();
-            return { success: response.ok, data: result };
+            // Check if response is successful
+            if (response.ok || response.status === 201) {
+                // Try to parse JSON, but handle empty responses
+                let result = {};
+                const text = await response.text();
+                if (text) {
+                    try {
+                        result = JSON.parse(text);
+                    } catch (e) {
+                        console.warn('Could not parse response JSON:', e);
+                    }
+                }
+                return { success: true, data: result };
+            } else {
+                const text = await response.text();
+                let errorMsg = `Error ${response.status}`;
+                try {
+                    const errorData = JSON.parse(text);
+                    errorMsg = errorData.message || errorData.error || errorMsg;
+                } catch (e) {
+                    errorMsg = text || errorMsg;
+                }
+                return { success: false, error: errorMsg };
+            }
         } catch (error) {
             console.error('Insert error:', error);
             return { success: false, error: error.message };
