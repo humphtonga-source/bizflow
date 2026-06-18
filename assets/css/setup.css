@@ -1,0 +1,336 @@
+/* Business Setup Form - Premium Styling */
+
+.setup-progress {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    transition: width 0.5s ease;
+    border-radius: 3px;
+}
+
+.progress-text {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0;
+    font-weight: var(--font-medium);
+}
+
+.progress-text .step-current {
+    color: var(--gold);
+    font-weight: var(--font-bold);
+    font-size: 1rem;
+}
+
+/* Setup Form */
+.setup-form {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.form-step {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.form-step.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-step h2 {
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.step-description {
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    font-weight: var(--font-light);
+}
+
+.form-step .form-group {
+    margin-bottom: 1.75rem;
+}
+
+.form-step .form-group label {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    display: block;
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+}
+
+.form-step .form-group input,
+.form-step .form-group select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    background: rgba(26, 31, 46, 0.5);
+    color: var(--text-secondary);
+    font-family: var(--font-family);
+    transition: all 0.3s ease;
+}
+
+.form-step .form-group input:focus,
+.form-step .form-group select:focus {
+    outline: none;
+    border-color: var(--gold);
+    background: rgba(26, 31, 46, 0.8);
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
+}
+
+.form-step .form-group small {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--text-muted-dark);
+    font-size: 0.85rem;
+    font-weight: var(--font-light);
+}
+
+/* Pricing Selector */
+.pricing-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.plan-option {
+    position: relative;
+}
+
+.plan-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.plan-label {
+    display: block;
+    padding: 1.75rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: rgba(26, 31, 46, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.plan-option input[type="radio"]:checked + .plan-label {
+    border-color: var(--gold);
+    background: rgba(201, 168, 76, 0.15);
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
+}
+
+.plan-label h4 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.plan-price {
+    font-size: 1.75rem;
+    font-weight: var(--font-bold);
+    color: var(--gold);
+    margin-bottom: 1rem;
+}
+
+.plan-price span {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: var(--font-regular);
+}
+
+.plan-features {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+}
+
+.plan-features li {
+    padding: 0.5rem 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: var(--font-light);
+}
+
+.plan-option.featured {
+    position: relative;
+}
+
+.plan-option.featured::before {
+    content: 'MOST POPULAR';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gold);
+    color: var(--primary-bg);
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: var(--font-bold);
+    letter-spacing: 1px;
+}
+
+/* Integration Options */
+.integration-options {
+    display: grid;
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.integration-card {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.integration-card input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.integration-card label {
+    display: block;
+    padding: 1.5rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: rgba(26, 31, 46, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 0;
+}
+
+.integration-card input[type="checkbox"]:checked + label {
+    border-color: var(--gold);
+    background: rgba(201, 168, 76, 0.15);
+}
+
+.integration-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.integration-header h4 {
+    font-size: 1.1rem;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.integration-status {
+    font-size: 0.75rem;
+    font-weight: var(--font-bold);
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: rgba(240, 158, 11, 0.2);
+    color: #FCD34D;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.integration-status.coming-soon {
+    opacity: 0.6;
+}
+
+.integration-card label p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+    font-weight: var(--font-light);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+}
+
+.form-actions .btn {
+    min-width: 150px;
+}
+
+.form-actions .btn-outline {
+    flex: 0;
+}
+
+.form-actions .btn-primary {
+    flex: 1;
+}
+
+/* Loading State */
+.loading-spinner p {
+    color: var(--text-muted);
+    margin-top: 1rem;
+    font-weight: var(--font-medium);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pricing-selector {
+        grid-template-columns: 1fr;
+    }
+
+    .plan-option.featured::before {
+        top: -8px;
+        font-size: 0.7rem;
+        padding: 3px 12px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+
+    .form-step h2 {
+        font-size: 1.5rem;
+    }
+
+    .integration-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .integration-status {
+        margin-top: 0.5rem;
+    }
+}
