@@ -1,6 +1,7 @@
-/* Authentication Pages */
+/* Authentication Pages - Premium Dark Modern Theme */
+
 .auth-page {
-    background: linear-gradient(135deg, #1a2332 0%, #0f1620 100%);
+    background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -10,15 +11,17 @@
 
 .auth-container {
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
 }
 
 .auth-card {
-    background-color: white;
-    border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.16);
+    background: var(--secondary-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     padding: 2.5rem;
+    border: 1px solid var(--border);
     animation: slideUp 0.3s ease;
+    backdrop-filter: blur(10px);
 }
 
 @keyframes slideUp {
@@ -39,19 +42,22 @@
 
 .auth-header h1 {
     font-size: 1.75rem;
-    color: #FFB800;
+    color: var(--gold);
     margin-bottom: 0.5rem;
+    font-weight: var(--font-bold);
 }
 
 .auth-header h2 {
     font-size: 1.5rem;
-    color: #1a2332;
+    color: var(--text-primary);
     margin-bottom: 0.5rem;
+    font-weight: var(--font-semibold);
 }
 
 .auth-header p {
-    color: #6b7280;
+    color: var(--text-muted);
     margin: 0;
+    font-weight: var(--font-light);
 }
 
 .auth-form {
@@ -64,28 +70,32 @@
 }
 
 .auth-links a {
-    color: #FFB800;
+    color: var(--gold);
     font-size: 0.9rem;
     text-decoration: underline;
+    font-weight: var(--font-medium);
+    transition: color 0.3s ease;
 }
 
 .auth-links a:hover {
-    color: #FF9500;
+    color: var(--gold-light);
 }
 
 .auth-footer {
     text-align: center;
     padding-top: 1.5rem;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border);
 }
 
 .auth-footer p {
-    color: #6b7280;
+    color: var(--text-muted);
     margin: 0;
+    font-weight: var(--font-light);
 }
 
 .auth-footer a {
-    font-weight: 600;
+    color: var(--gold);
+    font-weight: var(--font-semibold);
 }
 
 /* Responsive */
