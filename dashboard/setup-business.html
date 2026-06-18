@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en-KE">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Your Business - BizFlow</title>
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+</head>
+<body class="dashboard-page">
+    <header class="dashboard-header">
+        <div class="container">
+            <h1>BizFlow</h1>
+            <div class="header-right">
+                <button id="logoutBtn" class="btn btn-outline">Sign Out</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <div class="container">
+            <section class="business-setup">
+                <div class="section-header">
+                    <h2>Complete Your Business Setup</h2>
+                    <p>Tell us more about your business to customize your dashboard</p>
+                </div>
+
+                <div class="setup-form-wrapper">
+                    <form id="setupForm" class="setup-form">
+                        <div class="form-section">
+                            <h3>Business Information</h3>
+                            
+                            <div class="form-group">
+                                <label for="businessName">Business Name *</label>
+                                <input type="text" id="businessName" name="businessName" placeholder="e.g., John's Restaurant" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="businessType">Business Type *</label>
+                                <input type="text" id="businessType" name="businessType" placeholder="Selected business type" disabled>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="businessPhone">Business Phone *</label>
+                                <input type="tel" id="businessPhone" name="businessPhone" placeholder="+254 712 345 678" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="businessEmail">Business Email</label>
+                                <input type="email" id="businessEmail" name="businessEmail" placeholder="business@email.com">
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Location & Details</h3>
+
+                            <div class="form-group\">
+                                <label for=\"businessLocation\">Business Location *</label>
+                                <input type=\"text\" id=\"businessLocation\" name=\"businessLocation\" placeholder=\"e.g., Nairobi, Kenya\" required>
+                            </div>
+
+                            <div class=\"form-group\">
+                                <label for=\"businessCategory\">Primary Category *</label>
+                                <select id=\"businessCategory\" name=\"businessCategory\" required>
+                                    <option value=\"\">Select a category</option>
+                                    <option value=\"retail\">Retail</option>
+                                    <option value=\"service\">Service</option>
+                                    <option value=\"food\">Food & Beverage</option>
+                                    <option value=\"healthcare\">Healthcare</option>
+                                    <option value=\"entertainment\">Entertainment</option>
+                                    <option value=\"other\">Other</option>
+                                </select>
+                            </div>
+
+                            <div class=\"form-group\">
+                                <label for=\"employeeCount\">Number of Employees *</label>
+                                <select id=\"employeeCount\" name=\"employeeCount\" required>
+                                    <option value=\"\">Select range</option>
+                                    <option value=\"1\">Just me</option>
+                                    <option value=\"2-5\">2-5 employees</option>
+                                    <option value=\"6-20\">6-20 employees</option>
+                                    <option value=\"20+\">20+ employees</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class=\"form-section\">
+                            <h3>Plans & Integration</h3>
+
+                            <div class=\"form-group\">
+                                <label for=\"planType\">Choose Your Plan *</label>
+                                <select id=\"planType\" name=\"planType\" required>
+                                    <option value=\"\">Select a plan</option>
+                                    <option value=\"starter\">Starter - KES 999/month</option>
+                                    <option value=\"professional\">Professional - KES 2,499/month</option>
+                                    <option value=\"enterprise\">Enterprise - KES 4,999/month</option>
+                                </select>
+                            </div>
+
+                            <div class=\"form-group checkbox\">
+                                <input type=\"checkbox\" id=\"mpesaReady\" name=\"mpesaReady\">
+                                <label for=\"mpesaReady\">I want M-Pesa payment integration</label>
+                            </div>
+                        </div>
+
+                        <div class=\"form-actions\">
+                            <button type=\"submit\" class=\"btn btn-primary btn-lg\">Complete Setup</button>
+                            <button type=\"button\" id=\"skipBtn\" class=\"btn btn-outline\">Skip for Now</button>
+                        </div>
+
+                        <div id=\"setupMessage\" class=\"message\"></div>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div id=\"loadingSpinner\" class=\"loading-spinner hidden\">
+        <div class=\"spinner\"></div>
+        <p>Setting up your business...</p>
+    </div>
+
+    <script src=\"../assets/js/supabase-client.js\"></script>
+    <script src=\"../assets/js/utils.js\"></script>
+    <script src=\"../assets/js/business-setup.js\"></script>
+</body>
+</html>
