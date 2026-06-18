@@ -1,105 +1,159 @@
-// Business Setup Handler
+// Business Setup Form Handler - Multi-Step Workflow
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const user = supabase.getUser();
-    const businessData = JSON.parse(localStorage.getItem('bizflow_business'));
-    
-    if (!user) {
-        window.location.href = '../auth/signin.html';
-        return;
-    }
+const setupForm = document.getElementById('setupForm');
+const currentUser = supabase.getUser();
 
-    if (!businessData) {
-        window.location.href = './select-business.html';
-        return;
-    }
+// Check authentication
+if (!currentUser) {
+    window.location.href = '../auth/signin.html';
+}
 
-    // Pre-fill business type
-    document.getElementById('businessType').value = businessData.businessName;
+// Display user email
+document.getElementById('userEmail').textContent = currentUser.email;
 
-    // Handle form submission
-    document.getElementById('setupForm').addEventListener('submit', handleBusinessSetup);
-    
-    // Handle skip button
-    document.getElementById('skipBtn').addEventListener('click', () => {
-        // Go directly to dashboard
-        window.location.href = './admin.html';
-    });
+// Multi-step form handling
+const formSteps = document.querySelectorAll('.form-step');
+const totalSteps = formSteps.length;
+let currentStep = 1;
 
-    // Handle logout
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        supabase.signOut();
-        localStorage.removeItem('bizflow_business');
-        window.location.href = '../index.html';
+const nextButtons = document.querySelectorAll('.next-step');
+const prevButtons = document.querySelectorAll('.prev-step');
+
+// Navigate to next step
+nextButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (validateCurrentStep()) {
+            goToStep(currentStep + 1);
+        }
     });
 });
 
-async function handleBusinessSetup(e) {
+// Navigate to previous step
+prevButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        goToStep(currentStep - 1);
+    });
+});
+
+function goToStep(step) {
+    if (step < 1 || step > totalSteps) return;
+
+    // Hide all steps
+    formSteps.forEach(s => s.classList.remove('active'));
+
+    // Show target step
+    document.querySelector(`.form-step[data-step="${step}"]`).classList.add('active');
+
+    // Update progress
+    updateProgress(step);
+    currentStep = step;
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateProgress(step) {
+    const percentage = (step / totalSteps) * 100;
+    document.querySelector('.progress-fill').style.width = percentage + '%';
+    document.querySelector('.step-current').textContent = step;
+
+    const stepNames = [
+        'Business Info',
+        'Location & Category',
+        'Choose Plan',
+        'Integrations'
+    ];
+    document.querySelector('.step-name').textContent = stepNames[step - 1];
+}
+
+function validateCurrentStep() {
+    const currentSection = document.querySelector(`.form-step[data-step="${currentStep}"]`);
+    const inputs = currentSection.querySelectorAll('input[required], select[required]');
+
+    for (let input of inputs) {
+        if (!input.value.trim()) {
+            showMessage(`Please fill in all required fields in this step`, 'error');
+            input.focus();
+            return false;
+        }
+
+        // Email validation
+        if (input.type === 'email' && input.value && !validateEmail(input.value)) {
+            showMessage('Please enter a valid email address', 'error');
+            input.focus();
+            return false;
+        }
+
+        // Phone validation
+        if (input.type === 'tel' && input.value && !isValidKenyanPhone(input.value)) {
+            showMessage('Please enter a valid Kenyan phone number (+254...)', 'error');
+            input.focus();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Form submission
+setupForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const businessName = document.getElementById('businessName').value;
-    const businessPhone = document.getElementById('businessPhone').value;
-    const businessEmail = document.getElementById('businessEmail').value;
-    const businessLocation = document.getElementById('businessLocation').value;
-    const businessCategory = document.getElementById('businessCategory').value;
-    const employeeCount = document.getElementById('employeeCount').value;
-    const planType = document.getElementById('planType').value;
-    const mpesaReady = document.getElementById('mpesaReady').checked;
-    const messageDiv = document.getElementById('setupMessage');
-    const spinner = document.getElementById('loadingSpinner');
+    if (!validateCurrentStep()) return;
 
-    // Validation
-    if (!businessName || !businessPhone || !businessLocation || !businessCategory || !employeeCount || !planType) {
-        showMessage(messageDiv, 'Please fill in all required fields', 'error');
-        return;
-    }
+    showLoadingSpinner(true);
 
     try {
-        showMessage(messageDiv, 'Setting up your business...', 'info');
-        spinner.classList.remove('hidden');
-
-        const user = supabase.getUser();
-        const businessData = JSON.parse(localStorage.getItem('bizflow_business'));
-
-        // Prepare business setup data
-        const setupData = {
-            user_id: user.id,
-            business_id: businessData.userId,
-            business_type: businessData.businessType,
-            business_name: businessName,
-            business_phone: formatPhone(businessPhone),
-            business_email: businessEmail,
-            business_location: businessLocation,
-            business_category: businessCategory,
-            employee_count: employeeCount,
-            plan_type: planType,
-            mpesa_integration: mpesaReady,
+        // Collect form data
+        const formData = {
+            user_id: currentUser.id,
+            business_name: document.getElementById('businessName').value.trim(),
+            business_phone: formatPhoneNumber(document.getElementById('businessPhone').value),
+            business_email: document.getElementById('businessEmail').value.trim() || null,
+            business_location: document.getElementById('businessLocation').value.trim(),
+            business_category: document.getElementById('businessCategory').value,
+            employee_count: document.getElementById('employeeCount').value,
+            plan_type: document.querySelector('input[name="planType"]:checked').value,
+            mpesa_integration: document.getElementById('mpesaReady').checked,
+            whatsapp_integration: document.getElementById('whatsappReady').checked,
+            sms_integration: document.getElementById('smsReady').checked,
             setup_completed: true,
-            setup_date: new Date().toISOString()
+            created_at: new Date().toISOString()
         };
 
-        // Save to localStorage (in production, save to Supabase)
-        localStorage.setItem('bizflow_business_setup', JSON.stringify(setupData));
+        // Save to Supabase
+        const result = await supabase.insert('user_businesses', formData);
 
-        // Simulate API call (in production, insert into Supabase)
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (result.success) {
+            showMessage('✓ Business setup completed successfully!', 'success');
+            
+            // Store business data locally
+            localStorage.setItem('bizflow_business', JSON.stringify(formData));
 
-        showMessage(messageDiv, 'Business setup complete! Redirecting...', 'success');
-        spinner.classList.add('hidden');
-
-        // Redirect to admin dashboard
-        setTimeout(() => {
-            window.location.href = './admin.html';
-        }, 1500);
-
+            // Redirect to dashboard after 1.5 seconds
+            setTimeout(() => {
+                window.location.href = './admin.html';
+            }, 1500);
+        } else {
+            showMessage('Failed to save business data. Please try again.', 'error');
+        }
     } catch (error) {
-        spinner.classList.add('hidden');
-        showMessage(messageDiv, 'An error occurred. Please try again.', 'error');
         console.error('Setup error:', error);
+        showMessage('An error occurred. Please try again.', 'error');
+    } finally {
+        showLoadingSpinner(false);
     }
 }
 
-function showMessage(element, message, type) {
-    element.textContent = message;
-    element.className = `message show ${type}`;
-}
+);
+
+// Logout handler
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    supabase.signOut();
+    window.location.href = '../auth/signin.html';
+});
+
+// Initialize
+goToStep(1);
