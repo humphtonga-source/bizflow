@@ -74,7 +74,7 @@ async function handleSignup(e) {
 
             // Redirect to business setup
             setTimeout(() => {
-                window.location.href = './select-business.html';
+                window.location.href = '../dashboard/select-business.html';
             }, 1500);
         } else {
             showMessage(signupResult.error || 'Signup failed. Please try again.', 'error');
@@ -116,7 +116,7 @@ async function handleSignin(e) {
 
             // Redirect to business selection
             setTimeout(() => {
-                window.location.href = './select-business.html';
+                window.location.href = '../dashboard/select-business.html';
             }, 1500);
         } else {
             showMessage(result.error || 'Invalid email or password', 'error');
