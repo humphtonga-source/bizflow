@@ -1,13 +1,13 @@
 /* Dashboard Pages */
 .dashboard-page {
-    background-color: var(--gray-100);
+    background-color: #f9fafb;
 }
 
 .dashboard-nav {
     background-color: white;
-    border-bottom: 1px solid var(--gray-200);
+    border-bottom: 1px solid #e5e7eb;
     padding: 1rem 0;
-    box-shadow: var(--shadow);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
 }
 
 .dashboard-nav .container {
@@ -19,7 +19,7 @@
 .nav-brand {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--primary);
+    color: #FFB800;
 }
 
 .nav-user {
@@ -29,7 +29,7 @@
 }
 
 .nav-user span {
-    color: var(--gray-600);
+    color: #6b7280;
     font-size: 0.9rem;
 }
 
@@ -41,9 +41,9 @@
 
 .dashboard-section {
     background-color: white;
-    border-radius: var(--radius-lg);
+    border-radius: 16px;
     padding: 2rem;
-    box-shadow: var(--shadow);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
 }
 
 .section-header {
@@ -56,7 +56,7 @@
 }
 
 .section-header p {
-    color: var(--gray-600);
+    color: #6b7280;
     margin: 0;
 }
 
@@ -69,9 +69,9 @@
 }
 
 .business-item {
-    background-color: var(--gray-100);
+    background-color: #f9fafb;
     border: 2px solid transparent;
-    border-radius: var(--radius-lg);
+    border-radius: 16px;
     padding: 1.5rem;
     text-align: center;
     cursor: pointer;
@@ -79,15 +79,15 @@
 }
 
 .business-item:hover {
-    border-color: var(--primary);
+    border-color: #FFB800;
     transform: translateY(-5px);
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.16);
 }
 
 .business-item.active {
-    background-color: var(--primary);
-    color: white;
-    border-color: var(--primary);
+    background-color: #FFB800;
+    color: #1a2332;
+    border-color: #FFB800;
 }
 
 .business-icon {
@@ -102,11 +102,11 @@
 
 .business-description {
     font-size: 0.8rem;
-    color: var(--gray-600);
+    color: #6b7280;
 }
 
 .business-item.active .business-description {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(26, 35, 50, 0.8);
 }
 
 /* Dashboard Grid */
@@ -118,17 +118,17 @@
 }
 
 .feature-card {
-    background-color: var(--gray-50);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-lg);
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
     padding: 1.5rem;
     text-align: center;
     transition: all 0.3s ease;
 }
 
 .feature-card:hover {
-    box-shadow: var(--shadow-lg);
-    border-color: var(--primary);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.16);
+    border-color: #FFB800;
 }
 
 .feature-card .icon {
@@ -141,15 +141,15 @@
 }
 
 .feature-card p {
-    color: var(--gray-600);
+    color: #6b7280;
     font-size: 0.9rem;
     margin: 0;
 }
 
 .badge-coming-soon {
     display: inline-block;
-    background-color: var(--warning);
-    color: white;
+    background-color: #FFB800;
+    color: #1a2332;
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.75rem;
@@ -182,21 +182,21 @@
 .select-item {
     flex: 1;
     padding: 1rem;
-    border: 2px solid var(--gray-200);
-    border-radius: var(--radius);
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .select-item:hover {
-    border-color: var(--primary);
-    background-color: var(--gray-50);
+    border-color: #FFB800;
+    background-color: #f9fafb;
 }
 
 .select-item.selected {
-    border-color: var(--primary);
-    background-color: rgba(31, 155, 87, 0.1);
+    border-color: #FFB800;
+    background-color: rgba(255, 184, 0, 0.1);
 }
 
 .select-item input {
@@ -205,10 +205,10 @@
 
 /* User Welcome */
 .user-welcome {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: linear-gradient(135deg, #1a2332 0%, #0f1620 100%);
     color: white;
     padding: 2rem;
-    border-radius: var(--radius-lg);
+    border-radius: 16px;
     margin-bottom: 2rem;
 }
 
