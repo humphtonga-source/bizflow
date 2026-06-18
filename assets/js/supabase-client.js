@@ -1,8 +1,8 @@
 // Supabase Client - REST API Implementation
 
 const SUPABASE_CONFIG = {
-    url: 'https://ryxyqfbqglnuovnwyaey.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5eHlxZmJxZ2xudW92bnd5YWV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTg2MjkyODAsImV4cCI6MjAzNDIwNTI4MH0.a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0'
+    url: 'https://piaphpiowvgalvduacpt.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpYXBocGlvd3ZnYWx2ZHVhY3B0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2OTg4MDUsImV4cCI6MjA5NjI3NDgwNX0.lEOrhLB0AaCzsDXWzXHkvth83-KtXKOpTYe8ndi3bFc'
 };
 
 class SupabaseClient {
