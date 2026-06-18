@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizFlow - Business Management Made Simple</title>
+    <link rel="stylesheet" href="assets/css/global.css">
+    <link rel="stylesheet" href="assets/css/landing.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <h1>BizFlow</h1>
+            </div>
+            <div class="navbar-menu">
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#pricing" class="nav-link">Pricing</a>
+                <a href="auth/signin.html" class="nav-link">Sign In</a>
+                <a href="auth/signup.html" class="btn btn-primary">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h2>Manage Your Business Like Never Before</h2>
+                <p>Simple, affordable software for Kenyan businesses. Track finances, manage staff, and grow smarter.</p>
+                <a href="auth/signup.html" class="btn btn-primary btn-lg">Start Free Trial</a>
+                <p class="hero-subtext">14 days free. No credit card required.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3>Finance Management</h3>
+                    <p>Track income, expenses, and profits in real-time</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👥</div>
+                    <h3>Staff Management</h3>
+                    <p>Manage employees, roles, and performance</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Smart Analytics</h3>
+                    <p>Get insights to make better business decisions</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📦</div>
+                    <h3>Stock Management</h3>
+                    <p>Keep track of inventory and stock levels</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📅</div>
+                    <h3>Appointments</h3>
+                    <p>Schedule and manage customer appointments</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Mobile Ready</h3>
+                    <p>Works perfectly on phones, tablets and computers</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <h2 class="section-title">Simple Pricing</h2>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Starter</h3>
+                    <p class="price">KES 999<span>/month</span></p>
+                    <ul class="feature-list">
+                        <li>✓ Basic finance tracking</li>
+                        <li>✓ Up to 2 staff members</li>
+                        <li>✓ Simple reports</li>
+                        <li>✗ Analytics</li>
+                        <li>✗ API access</li>
+                    </ul>
+                    <a href="auth/signup.html" class="btn btn-outline">Get Started</a>
+                </div>
+                <div class="pricing-card featured">
+                    <span class="badge">Most Popular</span>
+                    <h3>Professional</h3>
+                    <p class="price">KES 2,499<span>/month</span></p>
+                    <ul class="feature-list">
+                        <li>✓ Full finance suite</li>
+                        <li>✓ Unlimited staff</li>
+                        <li>✓ Advanced reports</li>
+                        <li>✓ Analytics</li>
+                        <li>✗ API access</li>
+                    </ul>
+                    <a href="auth/signup.html" class="btn btn-primary">Start Free Trial</a>
+                </div>
+                <div class="pricing-card">
+                    <h3>Enterprise</h3>
+                    <p class="price">KES 4,999<span>/month</span></p>
+                    <ul class="feature-list">
+                        <li>✓ Everything in Professional</li>
+                        <li>✓ Multi-location support</li>
+                        <li>✓ API access</li>
+                        <li>✓ White-label option</li>
+                        <li>✓ Priority support</li>
+                    </ul>
+                    <a href="auth/signup.html" class="btn btn-outline">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-section">
+                <h4>BizFlow</h4>
+                <p>Making business management simple for Kenya</p>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="pages/terms.html">Terms of Service</a>
+                <a href="pages/privacy.html">Privacy Policy</a>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <p>Email: support@bizflow.co.ke</p>
+                <p>Phone: +254 (0) 123 456 789</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 BizFlow. All rights reserved. Made in Kenya 🇰🇪</p>
+        </div>
+    </footer>
+
+    <script src="assets/js/supabase-client.js"></script>
+    <script src="assets/js/utils.js"></script>
+    <script>
+        document.querySelectorAll('a[href="#"]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+            });
+        });
+    </script>
+</body>
+</html>
