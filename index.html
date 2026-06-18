@@ -25,10 +25,13 @@
     <section class="hero">
         <div class="container">
             <div class="hero-content">
-                <h2><span class="biz">Biz</span><span class="flow">Flow</span> - Manage Your Business Like Never Before</h2>
-                <p>Simple, affordable software for Kenyan businesses. Track finances, manage staff, and grow smarter.</p>
+                <h2><span class="biz">Biz</span><span class="flow">Flow</span></h2>
+                <p class="hero-subtitle">Powerful business management software designed for modern businesses</p>
+                <p class="hero-description">
+                    Whether you run a restaurant, retail shop, salon, or any other business, BizFlow provides the tools you need to manage finances, staff, inventory, and customers—all from one simple platform. Built with simplicity in mind, powerful in execution.
+                </p>
                 <a href="auth/signup.html" class="btn btn-primary btn-lg">Start Free Trial</a>
-                <p class="hero-subtext">14 days free. No credit card required.</p>
+                <p class="hero-subtext">14 days free. No credit card required. Works in Kenya and beyond.</p>
             </div>
         </div>
     </section>
@@ -36,54 +39,78 @@
     <section id="features" class="features">
         <div class="container">
             <h2 class="section-title">Powerful Features</h2>
+            <p class="section-subtitle">Click any feature to learn how it transforms your business</p>
             <div class="features-grid">
-                <div class="feature-card">
+                <div class="feature-card clickable" data-feature="finance">
                     <div class="feature-icon">💰</div>
                     <h3>Finance Management</h3>
                     <p>Track income, expenses, and profits in real-time</p>
+                    <span class="feature-cta">Learn More →</span>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card clickable" data-feature="staff">
                     <div class="feature-icon">👥</div>
                     <h3>Staff Management</h3>
                     <p>Manage employees, roles, and performance</p>
+                    <span class="feature-cta">Learn More →</span>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card clickable" data-feature="analytics">
                     <div class="feature-icon">📊</div>
                     <h3>Smart Analytics</h3>
                     <p>Get insights to make better business decisions</p>
+                    <span class="feature-cta">Learn More →</span>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card clickable" data-feature="inventory">
                     <div class="feature-icon">📦</div>
-                    <h3>Stock Management</h3>
-                    <p>Keep track of inventory and stock levels</p>
+                    <h3>Inventory Management</h3>
+                    <p>Keep track of stock levels and supplies</p>
+                    <span class="feature-cta">Learn More →</span>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card clickable" data-feature="appointments">
                     <div class="feature-icon">📅</div>
-                    <h3>Appointments</h3>
-                    <p>Schedule and manage customer appointments</p>
+                    <h3>Appointments & Scheduling</h3>
+                    <p>Manage bookings and customer appointments</p>
+                    <span class="feature-cta">Learn More →</span>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card clickable" data-feature="mobile">
                     <div class="feature-icon">📱</div>
                     <h3>Mobile Ready</h3>
                     <p>Works perfectly on phones, tablets and computers</p>
+                    <span class="feature-cta">Learn More →</span>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- Feature Modal -->
+    <div id="featureModal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <div class="modal-body">
+                <div class="modal-icon" id="modalIcon"></div>
+                <h3 id="modalTitle"></h3>
+                <p id="modalDescription"></p>
+                <ul id="modalBenefits" class="benefits-list"></ul>
+            </div>
+        </div>
+    </div>
+
     <section id="pricing" class="pricing">
         <div class="container">
-            <h2 class="section-title">Simple Pricing</h2>
+            <h2 class="section-title">Transparent Pricing</h2>
+            <p class="section-subtitle">Choose the plan that fits your business. All plans include core features.</p>
             <div class="pricing-grid">
                 <div class="pricing-card">
                     <h3>Starter</h3>
                     <p class="price">KES 999<span>/month</span></p>
+                    <div class="pricing-highlight">Perfect for solo entrepreneurs</div>
                     <ul class="feature-list">
                         <li>✓ Basic finance tracking</li>
                         <li>✓ Up to 2 staff members</li>
                         <li>✓ Simple reports</li>
-                        <li>✗ Analytics</li>
-                        <li>✗ API access</li>
+                        <li>✓ Mobile app access</li>
+                        <li>✓ Tax summary reports</li>
+                        <li>✓ Email support</li>
                     </ul>
                     <a href="auth/signup.html" class="btn btn-outline">Get Started</a>
                 </div>
@@ -91,26 +118,66 @@
                     <span class="badge">Most Popular</span>
                     <h3>Professional</h3>
                     <p class="price">KES 2,499<span>/month</span></p>
+                    <div class="pricing-highlight">Everything growing businesses need</div>
                     <ul class="feature-list">
-                        <li>✓ Full finance suite</li>
-                        <li>✓ Unlimited staff</li>
-                        <li>✓ Advanced reports</li>
-                        <li>✓ Analytics</li>
-                        <li>✗ API access</li>
+                        <li>✓ Full finance suite with budgeting</li>
+                        <li>✓ Unlimited staff members</li>
+                        <li>✓ Advanced reports & exports</li>
+                        <li>✓ Real-time analytics dashboard</li>
+                        <li>✓ Automated tax calculations</li>
+                        <li>✓ Inventory management</li>
+                        <li>✓ Customer database</li>
+                        <li>✓ Priority email & chat support</li>
                     </ul>
                     <a href="auth/signup.html" class="btn btn-primary">Start Free Trial</a>
                 </div>
                 <div class="pricing-card">
                     <h3>Enterprise</h3>
                     <p class="price">KES 4,999<span>/month</span></p>
+                    <div class="pricing-highlight">For serious, multi-location operations</div>
                     <ul class="feature-list">
                         <li>✓ Everything in Professional</li>
                         <li>✓ Multi-location support</li>
-                        <li>✓ API access</li>
-                        <li>✓ White-label option</li>
-                        <li>✓ Priority support</li>
+                        <li>✓ Advanced tax compliance tools</li>
+                        <li>✓ API access for integrations</li>
+                        <li>✓ White-label options</li>
+                        <li>✓ M-Pesa & payment integrations</li>
+                        <li>✓ Dedicated account manager</li>
+                        <li>✓ Priority phone support</li>
+                        <li>✓ Custom training & onboarding</li>
                     </ul>
                     <a href="auth/signup.html" class="btn btn-outline">Contact Sales</a>
+                </div>
+            </div>
+
+            <!-- Pricing Features Comparison -->
+            <div class="pricing-comparison">
+                <h3>All Plans Include</h3>
+                <div class="comparison-grid">
+                    <div class="comparison-item">
+                        <span class="comparison-icon">🇰🇪</span>
+                        <span>Works in Kenya & globally</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="comparison-icon">💼</span>
+                        <span>Tax simplification tools</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="comparison-icon">🔒</span>
+                        <span>Bank-level security</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="comparison-icon">☁️</span>
+                        <span>Cloud-based & always updated</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="comparison-icon">📲</span>
+                        <span>Mobile & desktop apps</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="comparison-icon">⚡</span>
+                        <span>Fast, reliable performance</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -119,8 +186,8 @@
     <footer>
         <div class="container footer-content">
             <div class="footer-section">
-                <h4>BizFlow</h4>
-                <p>Making business management simple for Kenya</p>
+                <h4><span class="biz">Biz</span><span class="flow">Flow</span></h4>
+                <p>Simple, powerful business management for everyone</p>
             </div>
             <div class="footer-section">
                 <h4>Legal</h4>
@@ -129,23 +196,17 @@
             </div>
             <div class="footer-section">
                 <h4>Contact</h4>
-                <p>Email: support@bizflow.co.ke</p>
-                <p>Phone: +254 (0) 123 456 789</p>
+                <p>Email: support@bizflow.com</p>
+                <p>Phone: +254 (0) 700 000 000</p>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2024 BizFlow. All rights reserved. Made in Kenya 🇰🇪</p>
+            <p>&copy; 2024 BizFlow. All rights reserved.</p>
         </div>
     </footer>
 
     <script src="assets/js/supabase-client.js"></script>
     <script src="assets/js/utils.js"></script>
-    <script>
-        document.querySelectorAll('a[href="#"]').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-            });
-        });
-    </script>
+    <script src="assets/js/landing.js"></script>
 </body>
 </html>
