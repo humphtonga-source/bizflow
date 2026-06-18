@@ -54,9 +54,8 @@ class SupabaseClient {
                     'apikey': this.anonKey,
                 },
                 body: JSON.stringify({
-                    email,
-                    password,
-                    data: metadata
+                    email: email,
+                    password: password
                 })
             });
 
@@ -74,7 +73,7 @@ class SupabaseClient {
                 }
                 return { success: true, user, session: data.session };
             } else {
-                const errorMsg = data.error_description || data.message || 'Signup failed';
+                const errorMsg = data.error_description || data.message || JSON.stringify(data);
                 return { success: false, error: errorMsg };
             }
         } catch (error) {
