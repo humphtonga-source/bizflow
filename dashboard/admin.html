@@ -3,202 +3,474 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - BizFlow</title>
+    <title>BizFlow Admin Dashboard</title>
     <link rel="stylesheet" href="../assets/css/global.css">
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
-    <style>
-        .admin-dashboard {
-            padding: var(--spacing-xl);
-        }
-        
-        .welcome-section {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--white);
-            padding: var(--spacing-2xl);
-            border-radius: var(--radius-xl);
-            margin-bottom: var(--spacing-2xl);
-        }
-        
-        .welcome-section h2 {
-            color: var(--white);
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: var(--spacing-lg);
-        }
-        
-        .dashboard-card {
-            background: var(--white);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-lg);
-            text-decoration: none;
-            color: var(--dark);
-            transition: var(--transition);
-            cursor: pointer;
-        }
-        
-        .dashboard-card:hover {
-            border-color: var(--primary);
-            box-shadow: var(--shadow-md);
-            transform: translateY(-3px);
-        }
-        
-        .card-icon {
-            font-size: 2.5rem;
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .card-title {
-            font-weight: 600;
-            margin-bottom: var(--spacing-sm);
-        }
-        
-        .card-description {
-            color: var(--gray);
-            font-size: var(--font-size-sm);
-        }
-        
-        .coming-soon {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        .badge-soon {
-            display: inline-block;
-            background: var(--warning);
-            color: var(--white);
-            padding: var(--spacing-xs) var(--spacing-sm);
-            border-radius: var(--radius-sm);
-            font-size: var(--font-size-sm);
-            margin-top: var(--spacing-md);
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
 </head>
-<body class="dashboard-page">
-    <header class="dashboard-header">
-        <div class="container">
-            <h1>BizFlow</h1>
-            <div class="header-right">
-                <span id="userEmail"></span>
-                <button id="logoutBtn" class="btn btn-outline">Sign Out</button>
+<body class="admin-page">
+    <!-- Top Navigation -->
+    <nav class="admin-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1><span class="biz">Biz</span><span class="flow">Flow</span> Admin</h1>
             </div>
-        </div>
-    </header>
-
-    <main class="dashboard-container">
-        <div class="container">
-            <div class="admin-dashboard">
-                <!-- Welcome Section -->
-                <div class="welcome-section">
-                    <h2 id="welcomeText">Welcome to BizFlow! 🎉</h2>
-                    <p>Your business dashboard is ready. Start by exploring the features below.</p>
+            <div class="nav-right">
+                <div class="notification-center">
+                    <button class="notification-btn" id="notificationBtn">
+                        🔔
+                        <span class="notification-badge" id="notificationBadge">3</span>
+                    </button>
+                    <div class="notification-dropdown hidden" id="notificationDropdown">
+                        <h4>Notifications</h4>
+                        <div id="notificationsList"></div>
+                    </div>
                 </div>
-
-                <!-- Dashboard Grid -->
-                <div class="dashboard-grid">
-                    <!-- Finance Management -->
-                    <div class="dashboard-card">
-                        <div class="card-icon">💰</div>
-                        <div class="card-title">Finance Management</div>
-                        <div class="card-description">Track income, expenses & profits in real-time</div>
-                        <div class="badge-soon">Coming Soon</div>
-                    </div>
-
-                    <!-- Staff Management -->
-                    <div class="dashboard-card">
-                        <div class="card-icon">👥</div>
-                        <div class="card-title">Staff Management</div>
-                        <div class="card-description">Schedule shifts & track performance</div>
-                        <div class="badge-soon">Coming Soon</div>
-                    </div>
-
-                    <!-- Inventory -->
-                    <div class="dashboard-card">
-                        <div class="card-icon">📦</div>
-                        <div class="card-title">Inventory</div>
-                        <div class="card-description">Stock taking & auto-reorder alerts</div>
-                        <div class="badge-soon">Coming Soon</div>
-                    </div>
-
-                    <!-- Appointments -->
-                    <div class="dashboard-card">
-                        <div class="card-icon">📅</div>
-                        <div class="card-title">Appointments</div>
-                        <div class="card-description">Schedule & manage customer bookings</div>
-                        <div class="badge-soon">Coming Soon</div>
-                    </div>
-
-                    <!-- Debt Tracking -->
-                    <div class="dashboard-card">
-                        <div class="card-icon">💳</div>
-                        <div class="card-title">Debt Management</div>
-                        <div class="card-description">Track customer & supplier debts</div>
-                        <div class="badge-soon">Coming Soon</div>
-                    </div>
-
-                    <!-- Analytics -->
-                    <div class="dashboard-card">
-                        <div class="card-icon">📊</div>
-                        <div class="card-title">Analytics</div>
-                        <div class="card-description">Real-time business insights & reports</div>
-                        <div class="badge-soon">Coming Soon</div>
-                    </div>
-
-                    <!-- Settings -->
-                    <div class="dashboard-card">
-                        <div class="card-icon">⚙️</div>
-                        <div class="card-title">Settings</div>
-                        <div class="card-description">Configure your account & business</div>
-                        <div class="badge-soon">Coming Soon</div>
-                    </div>
-
-                    <!-- Support -->
-                    <div class="dashboard-card">
-                        <div class="card-icon">💬</div>
-                        <div class="card-title">Support</div>
-                        <div class="card-description">Chat with our support team 24/7</div>
-                        <div class="badge-soon">Coming Soon</div>
-                    </div>
+                <div class="admin-info">
+                    <span id="adminName">Admin</span>
+                    <button id="logoutBtn" class="btn btn-outline btn-sm">Sign Out</button>
                 </div>
             </div>
         </div>
-    </main>
+    </nav>
 
-    <div id="loadingSpinner" class="loading-spinner hidden">
-        <div class="spinner"></div>
-        <p>Loading your dashboard...</p>
+    <!-- Main Container -->
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-menu">
+                <button class="menu-item active" data-tab="overview">
+                    <span class="menu-icon">📊</span>
+                    <span>Overview</span>
+                </button>
+                <button class="menu-item" data-tab="businesses">
+                    <span class="menu-icon">👥</span>
+                    <span>Businesses</span>
+                </button>
+                <button class="menu-item" data-tab="revenue">
+                    <span class="menu-icon">💰</span>
+                    <span>Revenue</span>
+                </button>
+                <button class="menu-item" data-tab="analytics">
+                    <span class="menu-icon">📈</span>
+                    <span>Analytics</span>
+                </button>
+                <button class="menu-item" data-tab="settings">
+                    <span class="menu-icon">⚙️</span>
+                    <span>Settings</span>
+                </button>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h4>Quick Actions</h4>
+                <button class="quick-btn" id="addBusinessBtn">➕ Add Business</button>
+                <button class="quick-btn" id="sendWhatsappBtn">💬 Send WhatsApp</button>
+                <button class="quick-btn" id="issueCouponBtn">🎟️ Issue Coupon</button>
+                <button class="quick-btn" id="viewLogsBtn">📝 Activity Log</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-content">
+            <!-- 1. OVERVIEW TAB -->
+            <section class="tab-content active" data-tab="overview">
+                <h2>📊 Dashboard Overview</h2>
+                
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label">MRR (Monthly Recurring Revenue)</div>
+                        <div class="kpi-value">KES <span id="mrrValue">245,400</span></div>
+                        <div class="kpi-change positive">↑ 12% from last month</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Active Businesses</div>
+                        <div class="kpi-value"><span id="activeBusinesses">47</span></div>
+                        <div class="kpi-breakdown">Starter: 25 | Pro: 18 | Enterprise: 4</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">New Signups (This Month)</div>
+                        <div class="kpi-value"><span id="monthlySignups">12</span></div>
+                        <div class="kpi-change">+3 this week</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Churn Rate</div>
+                        <div class="kpi-value"><span id="churnRate">4.2</span>%</div>
+                        <div class="kpi-change negative">↓ 1 cancellation this month</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Trial Conversion Rate</div>
+                        <div class="kpi-value"><span id="conversionRate">68</span>%</div>
+                        <div class="kpi-change positive">↑ Up from 60% last month</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Trial Expiring Today</div>
+                        <div class="kpi-value alert"><span id="expiringTrials">3</span></div>
+                        <div class="kpi-action"><button class="btn btn-sm btn-primary">Follow Up</button></div>
+                    </div>
+                </div>
+
+                <!-- Quick Alerts -->
+                <div class="alerts-section">
+                    <h3>⚡ Quick Alerts</h3>
+                    <div class="alerts-list" id="alertsList"></div>
+                </div>
+
+                <!-- Revenue Trend Chart -->
+                <div class="chart-section">
+                    <h3>💹 MRR Trend (Last 6 Months)</h3>
+                    <div class="simple-chart">
+                        <div class="chart-bar" style="height: 45%;"><span>KES 200K</span></div>
+                        <div class="chart-bar" style="height: 52%;"><span>KES 212K</span></div>
+                        <div class="chart-bar" style="height: 58%;"><span>KES 225K</span></div>
+                        <div class="chart-bar" style="height: 62%;"><span>KES 235K</span></div>
+                        <div class="chart-bar" style="height: 68%;"><span>KES 245K</span></div>
+                        <div class="chart-bar" style="height: 71%;"><span>KES 258K</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. BUSINESSES TAB -->
+            <section class="tab-content" data-tab="businesses">
+                <h2>👥 Businesses & Customers</h2>
+                
+                <!-- Search & Filter -->
+                <div class="search-filter">
+                    <input type="text" id="searchBusiness" placeholder="Search by name or phone..." class="search-input">
+                    <select id="filterCategory" class="filter-select">
+                        <option value="">All Categories</option>
+                        <option value="restaurant">🍽️ Restaurant</option>
+                        <option value="salon">💇 Salon</option>
+                        <option value="retail">🛒 Retail</option>
+                        <option value="chemist">💊 Chemist</option>
+                    </select>
+                    <select id="filterPlan" class="filter-select">
+                        <option value="">All Plans</option>
+                        <option value="starter">Starter</option>
+                        <option value="professional">Professional</option>
+                        <option value="enterprise">Enterprise</option>
+                    </select>
+                    <select id="filterStatus" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="trial">Trial</option>
+                        <option value="overdue">Overdue</option>
+                    </select>
+                </div>
+
+                <!-- Businesses Table -->
+                <div class="table-wrapper">
+                    <table class="businesses-table">
+                        <thead>
+                            <tr>
+                                <th>Business Name</th>
+                                <th>Owner</th>
+                                <th>Category</th>
+                                <th>Plan</th>
+                                <th>Status</th>
+                                <th>Phone</th>
+                                <th>Last Active</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="businessesTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 3. REVENUE TAB -->
+            <section class="tab-content" data-tab="revenue">
+                <h2>💰 Revenue & Payments</h2>
+                
+                <!-- Revenue Summary -->
+                <div class="revenue-summary">
+                    <div class="summary-card">
+                        <h4>Revenue This Month</h4>
+                        <div class="big-number">KES 258,000</div>
+                        <p>By Plan Type</p>
+                        <div class="breakdown">
+                            <div>Starter (25 × 999): KES 24,975</div>
+                            <div>Pro (18 × 2,499): KES 44,982</div>
+                            <div>Enterprise (4 × 4,999): KES 19,996</div>
+                        </div>
+                    </div>
+                    <div class="summary-card alert">
+                        <h4>Failed Payments</h4>
+                        <div class="big-number">3</div>
+                        <p>Businesses to follow up</p>
+                        <button class="btn btn-sm btn-primary">View Details</button>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Projected Next Month</h4>
+                        <div class="big-number">KES 280,000</div>
+                        <p>+3 new signups expected</p>
+                    </div>
+                </div>
+
+                <!-- Payment History -->
+                <h3 style="margin-top: 2rem;">Recent Transactions</h3>
+                <div class="table-wrapper">
+                    <table class="payments-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Business</th>
+                                <th>Amount</th>
+                                <th>Plan</th>
+                                <th>Payment Method</th>
+                                <th>Status</th>
+                                <th>M-Pesa</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentsTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 4. ANALYTICS TAB -->
+            <section class="tab-content" data-tab="analytics">
+                <h2>📈 Analytics & Insights</h2>
+                
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h4>Most Popular Category</h4>
+                        <div class="chart-stat">
+                            <div class="stat-label">🍽️ Restaurant</div>
+                            <div class="stat-bar">
+                                <div class="bar-fill" style="width: 45%;"></div>
+                            </div>
+                            <div class="stat-number">18 businesses (38%)</div>
+                        </div>
+                        <div class="chart-stat">
+                            <div class="stat-label">💇 Salon</div>
+                            <div class="stat-bar">
+                                <div class="bar-fill" style="width: 28%;"></div>
+                            </div>
+                            <div class="stat-number">12 businesses (26%)</div>
+                        </div>
+                        <div class="chart-stat">
+                            <div class="stat-label">🛒 Retail</div>
+                            <div class="stat-bar">
+                                <div class="bar-fill" style="width: 18%;"></div>
+                            </div>
+                            <div class="stat-number">8 businesses (17%)</div>
+                        </div>
+                    </div>
+
+                    <div class="analytics-card">
+                        <h4>Device Breakdown</h4>
+                        <div class="device-breakdown">
+                            <div class="device-item">
+                                <span>📱 Mobile</span>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 89%;"></div>
+                                </div>
+                                <span class="percentage">89%</span>
+                            </div>
+                            <div class="device-item">
+                                <span>💻 Desktop</span>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 11%;"></div>
+                                </div>
+                                <span class="percentage">11%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="analytics-card">
+                        <h4>Signup Sources</h4>
+                        <div class="source-list">
+                            <div class="source-item">
+                                <span>Direct</span>
+                                <span class="source-count">22 (47%)</span>
+                            </div>
+                            <div class="source-item">
+                                <span>Google</span>
+                                <span class="source-count">15 (32%)</span>
+                            </div>
+                            <div class="source-item">
+                                <span>Referral</span>
+                                <span class="source-count">7 (15%)</span>
+                            </div>
+                            <div class="source-item">
+                                <span>Other</span>
+                                <span class="source-count">3 (6%)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="analytics-card">
+                        <h4>Geographic Distribution</h4>
+                        <div class="geo-list">
+                            <div class="geo-item">
+                                <span>Nairobi</span>
+                                <span>28 businesses</span>
+                            </div>
+                            <div class="geo-item">
+                                <span>Mombasa</span>
+                                <span>6 businesses</span>
+                            </div>
+                            <div class="geo-item">
+                                <span>Kisumu</span>
+                                <span>4 businesses</span>
+                            </div>
+                            <div class="geo-item">
+                                <span>Others</span>
+                                <span>9 businesses</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="insights-box">
+                    <h4>📊 Key Insights</h4>
+                    <ul>
+                        <li>✅ Restaurants are your strongest market (38%) - invest in restaurant-specific features</li>
+                        <li>✅ Mobile dominance (89%) - ensure mobile experience is perfect</li>
+                        <li>⚠️ Low referral rate (15%) - implement referral program</li>
+                        <li>💡 Nairobi is 60% of user base - consider Mombasa/Kisumu expansion</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 5. SETTINGS TAB -->
+            <section class="tab-content" data-tab="settings">
+                <h2>⚙️ Settings & Configuration</h2>
+                
+                <!-- Plan Management -->
+                <div class="settings-section">
+                    <h3>Plan Management</h3>
+                    <div class="settings-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Plan</th>
+                                    <th>Monthly Price</th>
+                                    <th>Max Staff</th>
+                                    <th>Features</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Starter</td>
+                                    <td>KES 999</td>
+                                    <td>2</td>
+                                    <td>Basic Finance</td>
+                                    <td><button class="btn btn-sm btn-outline">Edit</button></td>
+                                </tr>
+                                <tr>
+                                    <td>Professional</td>
+                                    <td>KES 2,499</td>
+                                    <td>Unlimited</td>
+                                    <td>Full Suite</td>
+                                    <td><button class="btn btn-sm btn-outline">Edit</button></td>
+                                </tr>
+                                <tr>
+                                    <td>Enterprise</td>
+                                    <td>KES 4,999</td>
+                                    <td>Unlimited</td>
+                                    <td>Everything</td>
+                                    <td><button class="btn btn-sm btn-outline">Edit</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Feature Flags -->
+                <div class="settings-section">
+                    <h3>Feature Flags</h3>
+                    <div class="feature-flags">
+                        <div class="flag-item">
+                            <label>
+                                <input type="checkbox" checked> M-Pesa Integration
+                            </label>
+                            <span class="flag-status">✅ Active</span>
+                        </div>
+                        <div class="flag-item">
+                            <label>
+                                <input type="checkbox" checked> Inventory Module
+                            </label>
+                            <span class="flag-status">✅ Active</span>
+                        </div>
+                        <div class="flag-item">
+                            <label>
+                                <input type="checkbox"> WhatsApp Notifications
+                            </label>
+                            <span class="flag-status">⏳ Coming Soon</span>
+                        </div>
+                        <div class="flag-item">
+                            <label>
+                                <input type="checkbox"> API Access
+                            </label>
+                            <span class="flag-status">⏳ Coming Soon</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trial Settings -->
+                <div class="settings-section">
+                    <h3>Trial & General Settings</h3>
+                    <div class="settings-form">
+                        <div class="form-group">
+                            <label>Trial Period (Days)</label>
+                            <input type="number" value="14" min="1" max="30">
+                        </div>
+                        <div class="form-group">
+                            <label>Default Language</label>
+                            <select>
+                                <option selected>English</option>
+                                <option>Kiswahili</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Announcement Banner</label>
+                            <input type="text" placeholder="e.g., WhatsApp integration now live!">
+                        </div>
+                        <button class="btn btn-primary">Save Settings</button>
+                    </div>
+                </div>
+
+                <!-- System Health -->
+                <div class="settings-section">
+                    <h3>System Health</h3>
+                    <div class="health-status">
+                        <div class="health-item">
+                            <span>🟢 Supabase</span>
+                            <span>Connected (Response: 45ms)</span>
+                        </div>
+                        <div class="health-item">
+                            <span>🟢 M-Pesa API</span>
+                            <span>Active</span>
+                        </div>
+                        <div class="health-item">
+                            <span>🟢 Email Service</span>
+                            <span>Active</span>
+                        </div>
+                        <div class="health-item">
+                            <span>🟢 Backup</span>
+                            <span>Last: Today 2:30 AM</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Business Detail Modal -->
+    <div id="businessModal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <div class="modal-body" id="businessModalBody"></div>
+        </div>
     </div>
 
     <script src="../assets/js/supabase-client.js"></script>
     <script src="../assets/js/utils.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const user = supabase.getUser();
-            const business = JSON.parse(localStorage.getItem('bizflow_business'));
-            
-            if (!user) {
-                window.location.href = '../auth/signin.html';
-                return;
-            }
-
-            // Display user info
-            document.getElementById('userEmail').textContent = user.email;
-            
-            if (business) {
-                document.getElementById('welcomeText').textContent = `Welcome to ${business.businessName}! 🎉`;
-            }
-
-            // Logout handler
-            document.getElementById('logoutBtn').addEventListener('click', () => {
-                supabase.signOut();
-                localStorage.removeItem('bizflow_business');
-                window.location.href = '../index.html';
-            });
-        });
-    </script>
+    <script src="../assets/js/admin-dashboard.js"></script>
 </body>
 </html>
