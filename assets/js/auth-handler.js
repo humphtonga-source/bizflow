@@ -1,8 +1,14 @@
-// Authentication Handler - Fixed for Supabase
+// Authentication Handler - Fixed for production
+
+let isSubmitting = false; // Prevent double submission
 
 // Handle Signup
 async function handleSignup(e) {
     e.preventDefault();
+
+    // Prevent double submission
+    if (isSubmitting) return;
+    isSubmitting = true;
 
     const ownerName = document.getElementById('ownerName')?.value.trim();
     const businessName = document.getElementById('businessName')?.value.trim();
@@ -12,46 +18,48 @@ async function handleSignup(e) {
     const confirmPassword = document.getElementById('confirmPassword')?.value;
     const terms = document.getElementById('terms')?.checked;
 
-    const messageDiv = document.getElementById('signupMessage');
-
     // Validation
     if (!ownerName || !businessName || !email || !phone || !password) {
-        showMessage('Please fill in all required fields', 'error');
+        showMessage('signupMessage', 'Please fill in all required fields', 'error');
+        isSubmitting = false;
         return;
     }
 
     if (password !== confirmPassword) {
-        showMessage('Passwords do not match', 'error');
+        showMessage('signupMessage', 'Passwords do not match', 'error');
+        isSubmitting = false;
         return;
     }
 
     if (password.length < 8) {
-        showMessage('Password must be at least 8 characters', 'error');
+        showMessage('signupMessage', 'Password must be at least 8 characters', 'error');
+        isSubmitting = false;
         return;
     }
 
     if (!validateEmail(email)) {
-        showMessage('Please enter a valid email', 'error');
+        showMessage('signupMessage', 'Please enter a valid email', 'error');
+        isSubmitting = false;
         return;
     }
 
     if (!isValidKenyanPhone(phone)) {
-        showMessage('Please enter a valid Kenyan phone number', 'error');
+        showMessage('signupMessage', 'Please enter a valid Kenyan phone number', 'error');
+        isSubmitting = false;
         return;
     }
 
     if (!terms) {
-        showMessage('Please accept the terms and conditions', 'error');
+        showMessage('signupMessage', 'Please accept the terms and conditions', 'error');
+        isSubmitting = false;
         return;
     }
 
-    showMessage('Creating your account...', 'info');
+    showMessage('signupMessage', 'Creating your account...', 'info');
 
     try {
-        // Format phone
         const formattedPhone = formatPhoneNumber(phone);
 
-        // Sign up with Supabase
         const signupResult = await supabase.signUp(email, password, {
             full_name: ownerName,
             business_name: businessName,
@@ -59,7 +67,6 @@ async function handleSignup(e) {
         });
 
         if (signupResult.success) {
-            // Store user data
             const userData = {
                 id: signupResult.user.id,
                 email: signupResult.user.email,
@@ -70,19 +77,20 @@ async function handleSignup(e) {
 
             supabase.setUser(userData);
 
-            showMessage('✓ Account created successfully! Redirecting...', 'success');
+            showMessage('signupMessage', '✓ Account created successfully! Redirecting...', 'success');
 
-            // Redirect to business setup
+            // Single redirect with slight delay to ensure localStorage is set
             setTimeout(() => {
-                window.location.href = '../dashboard/select-business.html';
-            }, 1500);
+                window.location.href = './select-business.html';
+            }, 800);
         } else {
-            showMessage(signupResult.error || 'Signup failed. Please try again.', 'error');
-            console.error('Signup error:', signupResult.error);
+            showMessage('signupMessage', signupResult.error || 'Signup failed. Please try again.', 'error');
+            isSubmitting = false;
         }
     } catch (error) {
         console.error('Signup exception:', error);
-        showMessage('An error occurred. Please try again.', 'error');
+        showMessage('signupMessage', 'An error occurred. Please try again.', 'error');
+        isSubmitting = false;
     }
 }
 
@@ -90,41 +98,55 @@ async function handleSignup(e) {
 async function handleSignin(e) {
     e.preventDefault();
 
+    // Prevent double submission
+    if (isSubmitting) return;
+    isSubmitting = true;
+
     const email = document.getElementById('email')?.value.trim();
     const password = document.getElementById('password')?.value;
 
-    const messageDiv = document.getElementById('signinMessage');
-
     // Validation
     if (!email || !password) {
-        showMessage('Please enter email and password', 'error');
+        showMessage('signinMessage', 'Please enter email and password', 'error');
+        isSubmitting = false;
         return;
     }
 
     if (!validateEmail(email)) {
-        showMessage('Please enter a valid email', 'error');
+        showMessage('signinMessage', 'Please enter a valid email', 'error');
+        isSubmitting = false;
         return;
     }
 
-    showMessage('Signing in...', 'info');
+    showMessage('signinMessage', 'Signing in...', 'info');
 
     try {
         const result = await supabase.signIn(email, password);
 
         if (result.success) {
-            showMessage('✓ Signed in successfully! Redirecting...', 'success');
+            showMessage('signinMessage', '✓ Signed in successfully! Redirecting...', 'success');
 
-            // Redirect to business selection
+            // Check if user is owner (admin account) - owner email is hardcoded or marked in database
+            const isOwner = email === 'owner@bizflow.com' || email === 'admin@bizflow.com'; // Change to your owner email
+            
+            // Single redirect with slight delay
             setTimeout(() => {
-                window.location.href = '../dashboard/select-business.html';
-            }, 1500);
+                if (isOwner) {
+                    // Owner goes to admin dashboard
+                    window.location.href = './dashboard/admin.html';
+                } else {
+                    // Regular users go to business selection
+                    window.location.href = './select-business.html';
+                }
+            }, 800);
         } else {
-            showMessage(result.error || 'Invalid email or password', 'error');
-            console.error('Signin error:', result.error);
+            showMessage('signinMessage', result.error || 'Invalid email or password', 'error');
+            isSubmitting = false;
         }
     } catch (error) {
         console.error('Signin exception:', error);
-        showMessage('An error occurred. Please try again.', 'error');
+        showMessage('signinMessage', 'An error occurred. Please try again.', 'error');
+        isSubmitting = false;
     }
 }
 
@@ -132,50 +154,67 @@ async function handleSignin(e) {
 async function handlePasswordReset(e) {
     e.preventDefault();
 
+    if (isSubmitting) return;
+    isSubmitting = true;
+
     const email = document.getElementById('email')?.value.trim();
-    const messageDiv = document.getElementById('resetMessage');
 
     if (!email) {
-        showMessage('Please enter your email address', 'error');
+        showMessage('resetMessage', 'Please enter your email address', 'error');
+        isSubmitting = false;
         return;
     }
 
     if (!validateEmail(email)) {
-        showMessage('Please enter a valid email', 'error');
+        showMessage('resetMessage', 'Please enter a valid email', 'error');
+        isSubmitting = false;
         return;
     }
 
-    showMessage('Sending reset email...', 'info');
+    showMessage('resetMessage', 'Sending reset email...', 'info');
 
     try {
         const result = await supabase.resetPassword(email);
 
         if (result.success) {
-            showMessage('✓ Password reset email sent! Check your inbox.', 'success');
+            showMessage('resetMessage', '✓ Password reset email sent! Check your inbox.', 'success');
             setTimeout(() => {
                 window.location.href = './signin.html';
             }, 2000);
         } else {
-            showMessage(result.error || 'Failed to send reset email', 'error');
+            showMessage('resetMessage', result.error || 'Failed to send reset email', 'error');
+            isSubmitting = false;
         }
     } catch (error) {
         console.error('Reset error:', error);
-        showMessage('An error occurred. Please try again.', 'error');
+        showMessage('resetMessage', 'An error occurred. Please try again.', 'error');
+        isSubmitting = false;
     }
+}
+
+// Show message helper
+function showMessage(elementId, message, type) {
+    const messageDiv = document.getElementById(elementId);
+    if (!messageDiv) return;
+
+    messageDiv.textContent = message;
+    messageDiv.className = `message ${type}`;
+    messageDiv.style.display = 'block';
 }
 
 // Redirect if already logged in
 document.addEventListener('DOMContentLoaded', () => {
     const user = supabase.getUser();
     
-    // If on signup/signin/reset page and already logged in, redirect to dashboard
-    const currentPage = window.location.pathname;
-    if (user && (currentPage.includes('signup') || currentPage.includes('signin') || currentPage.includes('reset'))) {
-        window.location.href = './select-business.html';
+    if (user) {
+        const currentPage = window.location.pathname;
+        if (currentPage.includes('signup') || currentPage.includes('signin') || currentPage.includes('reset')) {
+            const isOwner = user.email === 'owner@bizflow.com' || user.email === 'admin@bizflow.com';
+            window.location.href = isOwner ? './dashboard/admin.html' : './select-business.html';
+        }
     }
 
-    // If on dashboard and NOT logged in, redirect to signin
-    if (!user && (currentPage.includes('setup') || currentPage.includes('select') || currentPage.includes('admin'))) {
+    if (!user && (window.location.pathname.includes('setup') || window.location.pathname.includes('select') || window.location.pathname.includes('admin'))) {
         window.location.href = '../auth/signin.html';
     }
 });
