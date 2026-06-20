@@ -6,7 +6,6 @@ let isSubmitting = false; // Prevent double submission
 async function handleSignup(e) {
     e.preventDefault();
 
-    // Prevent double submission
     if (isSubmitting) return;
     isSubmitting = true;
 
@@ -18,7 +17,6 @@ async function handleSignup(e) {
     const confirmPassword = document.getElementById('confirmPassword')?.value;
     const terms = document.getElementById('terms')?.checked;
 
-    // Validation
     if (!ownerName || !businessName || !email || !phone || !password) {
         showMessage('signupMessage', 'Please fill in all required fields', 'error');
         isSubmitting = false;
@@ -79,9 +77,8 @@ async function handleSignup(e) {
 
             showMessage('signupMessage', '✓ Account created successfully! Redirecting...', 'success');
 
-            // Single redirect with slight delay to ensure localStorage is set
             setTimeout(() => {
-                window.location.href = './select-business.html';
+                window.location.href = '/bizflow/dashboard/select-business.html';
             }, 800);
         } else {
             showMessage('signupMessage', signupResult.error || 'Signup failed. Please try again.', 'error');
@@ -98,14 +95,12 @@ async function handleSignup(e) {
 async function handleSignin(e) {
     e.preventDefault();
 
-    // Prevent double submission
     if (isSubmitting) return;
     isSubmitting = true;
 
     const email = document.getElementById('email')?.value.trim();
     const password = document.getElementById('password')?.value;
 
-    // Validation
     if (!email || !password) {
         showMessage('signinMessage', 'Please enter email and password', 'error');
         isSubmitting = false;
@@ -126,17 +121,13 @@ async function handleSignin(e) {
         if (result.success) {
             showMessage('signinMessage', '✓ Signed in successfully! Redirecting...', 'success');
 
-            // Check if user is owner (admin account) - owner email is hardcoded or marked in database
-            const isOwner = email === 'owner@bizflow.com' || email === 'admin@bizflow.com'; // Change to your owner email
+            const isOwner = email === 'owner@bizflow.com' || email === 'admin@bizflow.com';
             
-            // Single redirect with slight delay
             setTimeout(() => {
                 if (isOwner) {
-                    // Owner goes to admin dashboard
-                    window.location.href = './dashboard/admin.html';
+                    window.location.href = '/bizflow/dashboard/admin.html';
                 } else {
-                    // Regular users go to business selection
-                    window.location.href = './select-business.html';
+                    window.location.href = '/bizflow/dashboard/select-business.html';
                 }
             }, 800);
         } else {
@@ -179,7 +170,7 @@ async function handlePasswordReset(e) {
         if (result.success) {
             showMessage('resetMessage', '✓ Password reset email sent! Check your inbox.', 'success');
             setTimeout(() => {
-                window.location.href = './signin.html';
+                window.location.href = '/bizflow/auth/signin.html';
             }, 2000);
         } else {
             showMessage('resetMessage', result.error || 'Failed to send reset email', 'error');
@@ -210,11 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentPage = window.location.pathname;
         if (currentPage.includes('signup') || currentPage.includes('signin') || currentPage.includes('reset')) {
             const isOwner = user.email === 'owner@bizflow.com' || user.email === 'admin@bizflow.com';
-            window.location.href = isOwner ? './dashboard/admin.html' : './select-business.html';
+            window.location.href = isOwner ? '/bizflow/dashboard/admin.html' : '/bizflow/dashboard/select-business.html';
         }
     }
 
     if (!user && (window.location.pathname.includes('setup') || window.location.pathname.includes('select') || window.location.pathname.includes('admin'))) {
-        window.location.href = '../auth/signin.html';
+        window.location.href = '/bizflow/auth/signin.html';
     }
 });
