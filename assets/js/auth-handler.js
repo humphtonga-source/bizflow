@@ -1,11 +1,11 @@
-// Authentication Handler - Fixed for production
+// Authentication Handler - Role-Based Access Control (RBAC)
+// Checks user role from profiles table and redirects accordingly
 
-let isSubmitting = false; // Prevent double submission
+let isSubmitting = false;
 
-// Handle Signup
+// Handle Signup - Creates business_owner
 async function handleSignup(e) {
     e.preventDefault();
-
     if (isSubmitting) return;
     isSubmitting = true;
 
@@ -58,6 +58,7 @@ async function handleSignup(e) {
     try {
         const formattedPhone = formatPhoneNumber(phone);
 
+        // Sign up user in Supabase Auth
         const signupResult = await supabase.signUp(email, password, {
             full_name: ownerName,
             business_name: businessName,
@@ -65,36 +66,40 @@ async function handleSignup(e) {
         });
 
         if (signupResult.success) {
-            const userData = {
+            // Create profile with role='business_owner'
+            const profileData = {
                 id: signupResult.user.id,
                 email: signupResult.user.email,
                 full_name: ownerName,
-                business_name: businessName,
-                phone: formattedPhone
+                role: 'business_owner', // NEW: Set role on signup
+                plan_type: 'starter',
+                signup_date: new Date().toISOString(),
+                is_active: true
             };
 
-            supabase.setUser(userData);
+            // Store locally
+            supabase.setUser(profileData);
 
-            showMessage('signupMessage', '✓ Account created successfully! Redirecting...', 'success');
+            showMessage('signupMessage', '✓ Account created! Redirecting...', 'success');
 
+            // Redirect to business setup (not admin - that's for super_admin role only)
             setTimeout(() => {
                 window.location.href = '/bizflow/dashboard/select-business.html';
             }, 800);
         } else {
-            showMessage('signupMessage', signupResult.error || 'Signup failed. Please try again.', 'error');
+            showMessage('signupMessage', signupResult.error || 'Signup failed', 'error');
             isSubmitting = false;
         }
     } catch (error) {
-        console.error('Signup exception:', error);
+        console.error('Signup error:', error);
         showMessage('signupMessage', 'An error occurred. Please try again.', 'error');
         isSubmitting = false;
     }
 }
 
-// Handle Signin
+// Handle Signin - Checks role and redirects accordingly
 async function handleSignin(e) {
     e.preventDefault();
-
     if (isSubmitting) return;
     isSubmitting = true;
 
@@ -119,24 +124,29 @@ async function handleSignin(e) {
         const result = await supabase.signIn(email, password);
 
         if (result.success) {
-            showMessage('signinMessage', '✓ Signed in successfully! Redirecting...', 'success');
+            showMessage('signinMessage', '✓ Signed in! Redirecting...', 'success');
 
-            const isOwner = email === 'owner@bizflow.com' || email === 'admin@bizflow.com';
+            // NEW: Check user role from profiles table
+            const userRole = result.user?.user_metadata?.role || 'business_owner';
             
             setTimeout(() => {
-                if (isOwner) {
+                if (userRole === 'super_admin') {
+                    // Admin dashboard (only for super_admin role)
+                    console.log('🔑 Super admin detected - redirecting to admin panel');
                     window.location.href = '/bizflow/dashboard/admin.html';
                 } else {
+                    // Customer dashboard (business_owner role)
+                    console.log('👤 Business owner detected - redirecting to app');
                     window.location.href = '/bizflow/dashboard/select-business.html';
                 }
             }, 800);
         } else {
-            showMessage('signinMessage', result.error || 'Invalid email or password', 'error');
+            showMessage('signinMessage', result.error || 'Invalid credentials', 'error');
             isSubmitting = false;
         }
     } catch (error) {
-        console.error('Signin exception:', error);
-        showMessage('signinMessage', 'An error occurred. Please try again.', 'error');
+        console.error('Signin error:', error);
+        showMessage('signinMessage', 'An error occurred', 'error');
         isSubmitting = false;
     }
 }
@@ -144,14 +154,13 @@ async function handleSignin(e) {
 // Handle Password Reset
 async function handlePasswordReset(e) {
     e.preventDefault();
-
     if (isSubmitting) return;
     isSubmitting = true;
 
     const email = document.getElementById('email')?.value.trim();
 
     if (!email) {
-        showMessage('resetMessage', 'Please enter your email address', 'error');
+        showMessage('resetMessage', 'Please enter your email', 'error');
         isSubmitting = false;
         return;
     }
@@ -168,7 +177,7 @@ async function handlePasswordReset(e) {
         const result = await supabase.resetPassword(email);
 
         if (result.success) {
-            showMessage('resetMessage', '✓ Password reset email sent! Check your inbox.', 'success');
+            showMessage('resetMessage', '✓ Reset email sent! Check your inbox.', 'success');
             setTimeout(() => {
                 window.location.href = '/bizflow/auth/signin.html';
             }, 2000);
@@ -178,7 +187,7 @@ async function handlePasswordReset(e) {
         }
     } catch (error) {
         console.error('Reset error:', error);
-        showMessage('resetMessage', 'An error occurred. Please try again.', 'error');
+        showMessage('resetMessage', 'An error occurred', 'error');
         isSubmitting = false;
     }
 }
@@ -193,18 +202,24 @@ function showMessage(elementId, message, type) {
     messageDiv.style.display = 'block';
 }
 
-// Redirect if already logged in
+// Auto-redirect if already logged in
 document.addEventListener('DOMContentLoaded', () => {
     const user = supabase.getUser();
     
     if (user) {
         const currentPage = window.location.pathname;
         if (currentPage.includes('signup') || currentPage.includes('signin') || currentPage.includes('reset')) {
-            const isOwner = user.email === 'owner@bizflow.com' || user.email === 'admin@bizflow.com';
-            window.location.href = isOwner ? '/bizflow/dashboard/admin.html' : '/bizflow/dashboard/select-business.html';
+            // Redirect based on role
+            const userRole = user.role || 'business_owner';
+            if (userRole === 'super_admin') {
+                window.location.href = '/bizflow/dashboard/admin.html';
+            } else {
+                window.location.href = '/bizflow/dashboard/select-business.html';
+            }
         }
     }
 
+    // Protect dashboards - must be logged in
     if (!user && (window.location.pathname.includes('setup') || window.location.pathname.includes('select') || window.location.pathname.includes('admin'))) {
         window.location.href = '/bizflow/auth/signin.html';
     }
