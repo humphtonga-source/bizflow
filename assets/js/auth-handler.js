@@ -1,4 +1,4 @@
-// Authentication Handler - RBAC with Profile Creation
+// Authentication Handler - SIMPLIFIED (RLS disabled for testing)
 let isSubmitting = false;
 
 // Handle Signup
@@ -65,13 +65,13 @@ async function handleSignup(e) {
                 id: signupResult.user.id,
                 email: email,
                 full_name: ownerName,
-                role: 'business_owner', // CRITICAL: Set role on profile creation
+                role: 'business_owner',
                 plan_type: 'starter',
                 is_active: true,
                 signup_date: new Date().toISOString()
             };
 
-            // Insert into profiles table (with RLS allowing user to create their own profile)
+            // Insert into profiles table
             const profileInsert = await supabase.from('profiles')
                 .insert([profileData], { returning: 'minimal' });
 
@@ -82,7 +82,6 @@ async function handleSignup(e) {
                 return;
             }
 
-            // Store user info locally
             supabase.setUser({
                 id: signupResult.user.id,
                 email: email,
@@ -92,7 +91,6 @@ async function handleSignup(e) {
 
             showMessage('signupMessage', '✓ Account created! Redirecting...', 'success');
 
-            // Redirect to business setup (3-step process before dashboard)
             setTimeout(() => {
                 window.location.href = '/bizflow/dashboard/setup-business.html';
             }, 800);
@@ -107,7 +105,7 @@ async function handleSignup(e) {
     }
 }
 
-// Handle Signin - Checks role from database
+// Handle Signin - SIMPLIFIED: Skip role check, just redirect based on email
 async function handleSignin(e) {
     e.preventDefault();
     if (isSubmitting) return;
@@ -134,29 +132,17 @@ async function handleSignin(e) {
         const result = await supabase.signIn(email, password);
 
         if (result.success) {
-            // CRITICAL: Fetch user's role from profiles table
-            const { data: profileData, error: profileError } = await supabase.from('profiles')
-                .select('role')
-                .eq('id', result.user.id)
-                .single();
-
-            if (profileError) {
-                console.error('Profile fetch error:', profileError);
-                showMessage('signinMessage', 'Could not determine user role. Please try again.', 'error');
-                isSubmitting = false;
-                return;
-            }
-
-            const userRole = profileData?.role || 'business_owner';
-
             showMessage('signinMessage', '✓ Signed in! Redirecting...', 'success');
 
+            // SIMPLIFIED: Check if admin by email (hardcoded for now)
+            const isAdmin = email === 'humphtonga@gmail.com';
+
             setTimeout(() => {
-                if (userRole === 'super_admin') {
-                    console.log('🔑 Super admin signin - redirecting to admin');
+                if (isAdmin) {
+                    console.log('🔑 Admin signin - redirecting to admin');
                     window.location.href = '/bizflow/dashboard/admin.html';
                 } else {
-                    console.log('👤 Business owner signin - redirecting to app');
+                    console.log('👤 Customer signin - redirecting to app');
                     window.location.href = '/bizflow/dashboard/select-business.html';
                 }
             }, 800);
@@ -222,21 +208,16 @@ function showMessage(elementId, message, type) {
 }
 
 // Auto-redirect if already logged in
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     const user = supabase.getUser();
     
     if (user) {
         const currentPage = window.location.pathname;
         if (currentPage.includes('signup') || currentPage.includes('signin') || currentPage.includes('reset')) {
-            // Fetch role from database
-            const { data: profileData } = await supabase.from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single();
-
-            const userRole = profileData?.role || 'business_owner';
-
-            if (userRole === 'super_admin') {
+            // SIMPLIFIED: Check by email
+            const isAdmin = user.email === 'humphtonga@gmail.com';
+            
+            if (isAdmin) {
                 window.location.href = '/bizflow/dashboard/admin.html';
             } else {
                 window.location.href = '/bizflow/dashboard/select-business.html';
