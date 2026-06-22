@@ -1,9 +1,143 @@
-// Supabase Client - REST API Implementation
+// Supabase Client - REST API Implementation with .from() support
 
 const SUPABASE_CONFIG = {
     url: 'https://piaphpiowvgalvduacpt.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpYXBocGlvd3ZnYWx2ZHVhY3B0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2OTg4MDUsImV4cCI6MjA5NjI3NDgwNX0.lEOrhLB0AaCzsDXWzXHkvth83-KtXKOpTYe8ndi3bFc'
 };
+
+class SupabaseTable {
+    constructor(supabaseClient, tableName) {
+        this.client = supabaseClient;
+        this.tableName = tableName;
+        this.filters = [];
+        this.selectColumns = '*';
+    }
+
+    select(columns = '*') {
+        this.selectColumns = columns;
+        return this;
+    }
+
+    eq(column, value) {
+        this.filters.push({ column, operator: 'eq', value });
+        return this;
+    }
+
+    async single() {
+        const result = await this.execute();
+        if (result.data && result.data.length > 0) {
+            return { data: result.data[0], error: null };
+        }
+        return { data: null, error: result.error };
+    }
+
+    async execute() {
+        try {
+            let url = `${this.client.url}/rest/v1/${this.tableName}?select=${this.selectColumns}`;
+
+            // Add filters
+            this.filters.forEach(filter => {
+                url += `&${filter.column}=${filter.operator}.${encodeURIComponent(filter.value)}`;
+            });
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'apikey': this.client.anonKey,
+                    'Authorization': `Bearer ${this.client.session?.access_token || ''}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                return { data, error: null };
+            } else {
+                return { data: null, error: data.message || 'Query failed' };
+            }
+        } catch (error) {
+            console.error('Table query error:', error);
+            return { data: null, error: error.message };
+        }
+    }
+
+    async insert(records, options = {}) {
+        try {
+            let url = `${this.client.url}/rest/v1/${this.tableName}`;
+            
+            const headers = {
+                'Content-Type': 'application/json',
+                'apikey': this.client.anonKey,
+                'Authorization': `Bearer ${this.client.session?.access_token || ''}`
+            };
+
+            if (options.returning === 'minimal') {
+                headers['Prefer'] = 'return=minimal';
+            } else if (options.returning === 'representation') {
+                headers['Prefer'] = 'return=representation';
+            }
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(records)
+            });
+
+            const data = await response.text();
+            let parsedData = null;
+
+            if (data) {
+                try {
+                    parsedData = JSON.parse(data);
+                } catch (e) {
+                    console.warn('Could not parse response');
+                }
+            }
+
+            if (response.ok || response.status === 201) {
+                return { data: parsedData, error: null };
+            } else {
+                return { data: null, error: parsedData?.message || 'Insert failed' };
+            }
+        } catch (error) {
+            console.error('Insert error:', error);
+            return { data: null, error: error.message };
+        }
+    }
+
+    async update(data, options = {}) {
+        try {
+            let url = `${this.client.url}/rest/v1/${this.tableName}`;
+
+            this.filters.forEach(filter => {
+                url += `?${filter.column}=${filter.operator}.${encodeURIComponent(filter.value)}`;
+            });
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'apikey': this.client.anonKey,
+                'Authorization': `Bearer ${this.client.session?.access_token || ''}`
+            };
+
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers,
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                return { data: result, error: null };
+            } else {
+                return { data: null, error: result.message || 'Update failed' };
+            }
+        } catch (error) {
+            console.error('Update error:', error);
+            return { data: null, error: error.message };
+        }
+    }
+}
 
 class SupabaseClient {
     constructor(config) {
@@ -43,6 +177,11 @@ class SupabaseClient {
 
     getSession() {
         return this.session;
+    }
+
+    // NEW: .from() method for fluent API
+    from(tableName) {
+        return new SupabaseTable(this, tableName);
     }
 
     async signUp(email, password, metadata = {}) {
@@ -155,46 +294,8 @@ class SupabaseClient {
             return { success: false, error: 'Not authenticated' };
         }
 
-        try {
-            const response = await fetch(`${this.url}/rest/v1/${table}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': this.anonKey,
-                    'Authorization': `Bearer ${this.session?.access_token || ''}`,
-                    'Prefer': 'return=minimal'
-                },
-                body: JSON.stringify(data)
-            });
-
-            // Check if response is successful
-            if (response.ok || response.status === 201) {
-                // Try to parse JSON, but handle empty responses
-                let result = {};
-                const text = await response.text();
-                if (text) {
-                    try {
-                        result = JSON.parse(text);
-                    } catch (e) {
-                        console.warn('Could not parse response JSON:', e);
-                    }
-                }
-                return { success: true, data: result };
-            } else {
-                const text = await response.text();
-                let errorMsg = `Error ${response.status}`;
-                try {
-                    const errorData = JSON.parse(text);
-                    errorMsg = errorData.message || errorData.error || errorMsg;
-                } catch (e) {
-                    errorMsg = text || errorMsg;
-                }
-                return { success: false, error: errorMsg };
-            }
-        } catch (error) {
-            console.error('Insert error:', error);
-            return { success: false, error: error.message };
-        }
+        const result = await this.from(table).insert([data], { returning: 'minimal' });
+        return { success: !result.error, data: result.data, error: result.error };
     }
 
     async query(table, filters = {}) {
