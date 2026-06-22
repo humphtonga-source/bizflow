@@ -1,9 +1,7 @@
-// Authentication Handler - Role-Based Access Control (RBAC)
-// Checks user role from profiles table and redirects accordingly
-
+// Authentication Handler - RBAC with Profile Creation
 let isSubmitting = false;
 
-// Handle Signup - Creates business_owner
+// Handle Signup
 async function handleSignup(e) {
     e.preventDefault();
     if (isSubmitting) return;
@@ -59,32 +57,45 @@ async function handleSignup(e) {
         const formattedPhone = formatPhoneNumber(phone);
 
         // Sign up user in Supabase Auth
-        const signupResult = await supabase.signUp(email, password, {
-            full_name: ownerName,
-            business_name: businessName,
-            phone: formattedPhone
-        });
+        const signupResult = await supabase.signUp(email, password);
 
         if (signupResult.success) {
-            // Create profile with role='business_owner'
+            // Create profile in profiles table with role='business_owner'
             const profileData = {
                 id: signupResult.user.id,
-                email: signupResult.user.email,
+                email: email,
                 full_name: ownerName,
-                role: 'business_owner', // NEW: Set role on signup
+                role: 'business_owner', // CRITICAL: Set role on profile creation
                 plan_type: 'starter',
-                signup_date: new Date().toISOString(),
-                is_active: true
+                is_active: true,
+                signup_date: new Date().toISOString()
             };
 
-            // Store locally
-            supabase.setUser(profileData);
+            // Insert into profiles table (with RLS allowing user to create their own profile)
+            const profileInsert = await supabase.client
+                .from('profiles')
+                .insert([profileData], { returning: 'minimal' });
+
+            if (profileInsert.error) {
+                console.error('Profile creation error:', profileInsert.error);
+                showMessage('signupMessage', 'Account created but profile setup failed. Please contact support.', 'error');
+                isSubmitting = false;
+                return;
+            }
+
+            // Store user info locally
+            supabase.setUser({
+                id: signupResult.user.id,
+                email: email,
+                full_name: ownerName,
+                role: 'business_owner'
+            });
 
             showMessage('signupMessage', '✓ Account created! Redirecting...', 'success');
 
-            // Redirect to business setup (not admin - that's for super_admin role only)
+            // Redirect to business setup (3-step process before dashboard)
             setTimeout(() => {
-                window.location.href = '/bizflow/dashboard/select-business.html';
+                window.location.href = '/bizflow/dashboard/setup-business.html';
             }, 800);
         } else {
             showMessage('signupMessage', signupResult.error || 'Signup failed', 'error');
@@ -97,7 +108,7 @@ async function handleSignup(e) {
     }
 }
 
-// Handle Signin - Checks role and redirects accordingly
+// Handle Signin - Checks role from database
 async function handleSignin(e) {
     e.preventDefault();
     if (isSubmitting) return;
@@ -124,19 +135,30 @@ async function handleSignin(e) {
         const result = await supabase.signIn(email, password);
 
         if (result.success) {
+            // CRITICAL: Fetch user's role from profiles table
+            const { data: profileData, error: profileError } = await supabase.client
+                .from('profiles')
+                .select('role')
+                .eq('id', result.user.id)
+                .single();
+
+            if (profileError) {
+                console.error('Profile fetch error:', profileError);
+                showMessage('signinMessage', 'Could not determine user role. Please try again.', 'error');
+                isSubmitting = false;
+                return;
+            }
+
+            const userRole = profileData?.role || 'business_owner';
+
             showMessage('signinMessage', '✓ Signed in! Redirecting...', 'success');
 
-            // NEW: Check user role from profiles table
-            const userRole = result.user?.user_metadata?.role || 'business_owner';
-            
             setTimeout(() => {
                 if (userRole === 'super_admin') {
-                    // Admin dashboard (only for super_admin role)
-                    console.log('🔑 Super admin detected - redirecting to admin panel');
+                    console.log('🔑 Super admin signin - redirecting to admin');
                     window.location.href = '/bizflow/dashboard/admin.html';
                 } else {
-                    // Customer dashboard (business_owner role)
-                    console.log('👤 Business owner detected - redirecting to app');
+                    console.log('👤 Business owner signin - redirecting to app');
                     window.location.href = '/bizflow/dashboard/select-business.html';
                 }
             }, 800);
@@ -192,7 +214,6 @@ async function handlePasswordReset(e) {
     }
 }
 
-// Show message helper
 function showMessage(elementId, message, type) {
     const messageDiv = document.getElementById(elementId);
     if (!messageDiv) return;
@@ -203,14 +224,21 @@ function showMessage(elementId, message, type) {
 }
 
 // Auto-redirect if already logged in
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const user = supabase.getUser();
     
     if (user) {
         const currentPage = window.location.pathname;
         if (currentPage.includes('signup') || currentPage.includes('signin') || currentPage.includes('reset')) {
-            // Redirect based on role
-            const userRole = user.role || 'business_owner';
+            // Fetch role from database
+            const { data: profileData } = await supabase.client
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            const userRole = profileData?.role || 'business_owner';
+
             if (userRole === 'super_admin') {
                 window.location.href = '/bizflow/dashboard/admin.html';
             } else {
@@ -219,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Protect dashboards - must be logged in
+    // Protect dashboards
     if (!user && (window.location.pathname.includes('setup') || window.location.pathname.includes('select') || window.location.pathname.includes('admin'))) {
         window.location.href = '/bizflow/auth/signin.html';
     }
