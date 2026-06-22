@@ -72,8 +72,7 @@ async function handleSignup(e) {
             };
 
             // Insert into profiles table (with RLS allowing user to create their own profile)
-            const profileInsert = await supabase.client
-                .from('profiles')
+            const profileInsert = await supabase.from('profiles')
                 .insert([profileData], { returning: 'minimal' });
 
             if (profileInsert.error) {
@@ -136,8 +135,7 @@ async function handleSignin(e) {
 
         if (result.success) {
             // CRITICAL: Fetch user's role from profiles table
-            const { data: profileData, error: profileError } = await supabase.client
-                .from('profiles')
+            const { data: profileData, error: profileError } = await supabase.from('profiles')
                 .select('role')
                 .eq('id', result.user.id)
                 .single();
@@ -231,8 +229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const currentPage = window.location.pathname;
         if (currentPage.includes('signup') || currentPage.includes('signin') || currentPage.includes('reset')) {
             // Fetch role from database
-            const { data: profileData } = await supabase.client
-                .from('profiles')
+            const { data: profileData } = await supabase.from('profiles')
                 .select('role')
                 .eq('id', user.id)
                 .single();
