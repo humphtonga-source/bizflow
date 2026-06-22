@@ -1,4 +1,5 @@
 // Business Setup Form Handler - Multi-Step Workflow
+// Saves to CORRECT 'businesses' table (not user_businesses)
 
 const setupForm = document.getElementById('setupForm');
 const currentUser = supabase.getUser();
@@ -97,7 +98,7 @@ function validateCurrentStep() {
     return true;
 }
 
-// Form submission
+// Form submission - SAVES TO 'businesses' TABLE
 setupForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -108,52 +109,117 @@ setupForm.addEventListener('submit', async (e) => {
     try {
         // Collect form data
         const formData = {
-            user_id: currentUser.id,
+            owner_id: currentUser.id,
             business_name: document.getElementById('businessName').value.trim(),
             business_phone: formatPhoneNumber(document.getElementById('businessPhone').value),
             business_email: document.getElementById('businessEmail').value.trim() || null,
             business_location: document.getElementById('businessLocation').value.trim(),
             business_category: document.getElementById('businessCategory').value,
+            county: document.getElementById('businessLocation').value.trim().split(',')[0], // Extract county
             employee_count: document.getElementById('employeeCount').value,
-            plan_type: document.querySelector('input[name="planType"]:checked').value,
+            status: 'trial', // New businesses start in trial
+            setup_completed: true,
             mpesa_integration: document.getElementById('mpesaReady').checked,
             whatsapp_integration: document.getElementById('whatsappReady').checked,
             sms_integration: document.getElementById('smsReady').checked,
-            setup_completed: true,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
         };
 
-        // Save to Supabase
-        const result = await supabase.insert('user_businesses', formData);
+        // CRITICAL: Save to 'businesses' table (not user_businesses)
+        const { data: businessData, error: businessError } = await supabase.client
+            .from('businesses')
+            .insert([formData], { returning: 'representation' });
 
-        if (result.success) {
-            showMessage('✓ Business setup completed successfully!', 'success');
-            
-            // Store business data locally
-            localStorage.setItem('bizflow_business', JSON.stringify(formData));
-
-            // Redirect to dashboard after 1.5 seconds
-            setTimeout(() => {
-                window.location.href = './admin.html';
-            }, 1500);
-        } else {
-            showMessage('Failed to save business data. Please try again.', 'error');
+        if (businessError) {
+            console.error('Business creation error:', businessError);
+            showMessage('Failed to save business data. ' + businessError.message, 'error');
+            showLoadingSpinner(false);
+            return;
         }
+
+        // Get the newly created business ID
+        const businessId = businessData?.[0]?.id;
+
+        if (businessId) {
+            // Update profile with business_id
+            const { error: profileError } = await supabase.client
+                .from('profiles')
+                .update({ business_id: businessId })
+                .eq('id', currentUser.id);
+
+            if (profileError) {
+                console.error('Profile update error:', profileError);
+                console.log('Warning: business created but profile not linked');
+            }
+
+            // Create subscription record for this business
+            const planPrices = {
+                starter: 999,
+                professional: 2499,
+                enterprise: 4999
+            };
+
+            const selectedPlan = document.querySelector('input[name="planType"]:checked').value;
+            const trialEndDate = new Date();
+            trialEndDate.setDate(trialEndDate.getDate() + 14); // 14-day trial
+
+            const { error: subscriptionError } = await supabase.client
+                .from('subscriptions')
+                .insert([{
+                    business_id: businessId,
+                    plan_type: selectedPlan,
+                    monthly_price: planPrices[selectedPlan],
+                    status: 'trial',
+                    trial_end_date: trialEndDate.toISOString(),
+                    payment_status: 'pending',
+                    billing_cycle_start: new Date().toISOString()
+                }], { returning: 'minimal' });
+
+            if (subscriptionError) {
+                console.error('Subscription creation error:', subscriptionError);
+                console.log('Warning: business created but subscription not initialized');
+            }
+        }
+
+        showMessage('✓ Business setup completed successfully!', 'success');
+
+        // Store business data locally
+        localStorage.setItem('bizflow_business', JSON.stringify(formData));
+
+        // Redirect to customer dashboard
+        setTimeout(() => {
+            window.location.href = './select-business.html';
+        }, 1500);
     } catch (error) {
         console.error('Setup error:', error);
         showMessage('An error occurred. Please try again.', 'error');
     } finally {
         showLoadingSpinner(false);
     }
-}
-
-);
+});
 
 // Logout handler
 document.getElementById('logoutBtn').addEventListener('click', () => {
     supabase.signOut();
     window.location.href = '../auth/signin.html';
 });
+
+function showMessage(message, type) {
+    const messageDiv = document.getElementById('setupMessage');
+    if (!messageDiv) return;
+
+    messageDiv.textContent = message;
+    messageDiv.className = `message ${type}`;
+    messageDiv.style.display = 'block';
+}
+
+function showLoadingSpinner(show) {
+    const spinner = document.getElementById('loadingSpinner');
+    if (spinner) {
+        spinner.classList.toggle('hidden', !show);
+    }
+}
 
 // Initialize
 goToStep(1);
