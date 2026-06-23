@@ -207,10 +207,22 @@ class SupabaseClient {
                     ...metadata
                 };
                 this.setUser(user);
+
+                // FIX: Extract access_token directly from signup response
+                // This works even if email confirmation is required
                 if (data.session) {
                     this.setSession(data.session);
+                } else if (data.access_token) {
+                    // Fallback: use access_token directly if session object isn't available
+                    this.setSession({
+                        access_token: data.access_token,
+                        refresh_token: data.refresh_token || null,
+                        user: data.user
+                    });
                 }
-                return { success: true, user, session: data.session };
+
+                console.log('[BizFlow Auth] Signup successful, session set:', !!this.session?.access_token);
+                return { success: true, user, session: data.session || { access_token: data.access_token } };
             } else {
                 const errorMsg = data.error_description || data.message || JSON.stringify(data);
                 return { success: false, error: errorMsg };
