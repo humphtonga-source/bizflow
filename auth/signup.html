@@ -428,86 +428,130 @@
             showMessage('Creating your account...', 'info');
 
             try {
-                // Sign up
+                // STEP 1: Sign up user in Supabase Auth
+                console.log('Step 1: Signing up user with email:', email);
                 const signupResult = await supabase.signUp(email, password);
 
-                if (signupResult.success) {
-                    // Create profile with business type
-                    const profileData = {
-                        id: signupResult.user.id,
-                        email: email,
-                        role: 'business_owner',
-                        plan_type: 'starter',
-                        is_active: true,
-                        signup_date: new Date().toISOString()
-                    };
+                if (!signupResult.success) {
+                    console.error('Signup failed:', signupResult.error);
+                    showMessage('Signup failed: ' + signupResult.error, 'error');
+                    loadingState.style.display = 'none';
+                    isSubmitting = false;
+                    return;
+                }
 
-                    const profileInsert = await supabase.from('profiles')
-                        .insert([profileData], { returning: 'minimal' });
+                console.log('Signup successful. User ID:', signupResult.user.id);
 
-                    if (profileInsert.error) {
-                        showMessage('Account created but profile setup failed', 'error');
-                        loadingState.style.display = 'none';
-                        isSubmitting = false;
-                        return;
-                    }
+                // STEP 2: Create profile record
+                console.log('Step 2: Creating profile...');
+                const profileData = {
+                    id: signupResult.user.id,
+                    email: email,
+                    full_name: 'Customer', // Default name
+                    role: 'business_owner',
+                    plan_type: 'starter',
+                    is_active: true,
+                    signup_date: new Date().toISOString(),
+                    created_at: new Date().toISOString(),
+                    last_active: new Date().toISOString()
+                };
 
-                    // Create default business
-                    const businessData = {
-                        owner_id: signupResult.user.id,
-                        business_name: 'My Business',
-                        business_category: businessType,
-                        status: 'trial',
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    };
+                console.log('Profile data to insert:', profileData);
 
-                    const businessInsert = await supabase.from('businesses')
-                        .insert([businessData], { returning: 'representation' });
+                const profileInsert = await supabase.from('profiles')
+                    .insert([profileData], { returning: 'minimal' });
 
-                    if (!businessInsert.error && businessInsert.data?.[0]) {
-                        const businessId = businessInsert.data[0].id;
-                        
-                        // Create subscription
+                if (profileInsert.error) {
+                    console.error('Profile creation error:', profileInsert.error);
+                    showMessage('Profile creation failed: ' + profileInsert.error, 'error');
+                    loadingState.style.display = 'none';
+                    isSubmitting = false;
+                    return;
+                }
+
+                console.log('Profile created successfully');
+
+                // STEP 3: Create default business
+                console.log('Step 3: Creating business...');
+                const businessData = {
+                    owner_id: signupResult.user.id,
+                    business_name: 'My Business',
+                    business_category: businessType,
+                    status: 'trial',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+
+                console.log('Business data to insert:', businessData);
+
+                const businessInsert = await supabase.from('businesses')
+                    .insert([businessData], { returning: 'representation' });
+
+                if (businessInsert.error) {
+                    console.error('Business creation error:', businessInsert.error);
+                    console.log('Warning: business creation failed, but profile was created');
+                } else {
+                    console.log('Business created successfully');
+                    const businessId = businessInsert.data?.[0]?.id;
+
+                    if (businessId) {
+                        // STEP 4: Create subscription
+                        console.log('Step 4: Creating subscription...');
                         const trialEndDate = new Date();
                         trialEndDate.setDate(trialEndDate.getDate() + 14);
 
-                        await supabase.from('subscriptions')
-                            .insert([{
-                                business_id: businessId,
-                                plan_type: 'starter',
-                                monthly_price: 999,
-                                status: 'trial',
-                                trial_end_date: trialEndDate.toISOString(),
-                                payment_status: 'pending',
-                                billing_cycle_start: new Date().toISOString()
-                            }], { returning: 'minimal' });
+                        const subscriptionData = {
+                            business_id: businessId,
+                            plan_type: 'starter',
+                            monthly_price: 999,
+                            status: 'trial',
+                            trial_end_date: trialEndDate.toISOString(),
+                            payment_status: 'pending',
+                            billing_cycle_start: new Date().toISOString()
+                        };
 
-                        // Update profile with business_id
-                        await supabase.from('profiles')
+                        console.log('Subscription data to insert:', subscriptionData);
+
+                        const subscriptionInsert = await supabase.from('subscriptions')
+                            .insert([subscriptionData], { returning: 'minimal' });
+
+                        if (subscriptionInsert.error) {
+                            console.error('Subscription creation error:', subscriptionInsert.error);
+                        } else {
+                            console.log('Subscription created successfully');
+                        }
+
+                        // STEP 5: Update profile with business_id
+                        console.log('Step 5: Updating profile with business_id...');
+                        const updateResult = await supabase.from('profiles')
                             .update({ business_id: businessId })
                             .eq('id', signupResult.user.id);
+
+                        if (updateResult.error) {
+                            console.error('Profile update error:', updateResult.error);
+                        } else {
+                            console.log('Profile updated with business_id');
+                        }
                     }
-
-                    supabase.setUser({
-                        id: signupResult.user.id,
-                        email: email,
-                        role: 'business_owner'
-                    });
-
-                    showMessage('✓ Account created! Redirecting...', 'success');
-
-                    setTimeout(() => {
-                        window.location.href = '/bizflow/dashboard/select-business.html?onboard=true';
-                    }, 1000);
-                } else {
-                    showMessage(signupResult.error || 'Signup failed', 'error');
-                    loadingState.style.display = 'none';
-                    isSubmitting = false;
                 }
+
+                // STEP 6: Success - redirect
+                supabase.setUser({
+                    id: signupResult.user.id,
+                    email: email,
+                    role: 'business_owner'
+                });
+
+                showMessage('✓ Account created! Redirecting...', 'success');
+                console.log('Signup complete - redirecting to dashboard');
+
+                setTimeout(() => {
+                    window.location.href = '/bizflow/dashboard/select-business.html?onboard=true';
+                }, 1500);
+
             } catch (error) {
-                console.error('Signup error:', error);
-                showMessage('An error occurred. Please try again.', 'error');
+                console.error('Signup exception:', error);
+                showMessage('An error occurred: ' + error.message, 'error');
                 loadingState.style.display = 'none';
                 isSubmitting = false;
             }
