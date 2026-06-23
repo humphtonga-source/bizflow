@@ -116,75 +116,6 @@
             box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
         }
 
-        .categories-label {
-            display: block;
-            color: #fff;
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-bottom: 1rem;
-            letter-spacing: 0.5px;
-        }
-
-        .categories-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-        }
-
-        .category-option {
-            position: relative;
-        }
-
-        .category-option input[type="radio"] {
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .category-label {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 1.25rem;
-            background: rgba(18, 21, 28, 0.5);
-            border: 2px solid rgba(201, 168, 76, 0.2);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            user-select: none;
-        }
-
-        .category-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .category-name {
-            color: #ccc;
-            font-size: 0.85rem;
-            font-weight: 500;
-            line-height: 1.2;
-        }
-
-        .category-option input[type="radio"]:checked + .category-label {
-            background: linear-gradient(135deg, rgba(201, 168, 76, 0.15) 0%, rgba(201, 168, 76, 0.05) 100%);
-            border-color: #C9A84C;
-            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
-        }
-
-        .category-option input[type="radio"]:checked + .category-label .category-name {
-            color: #C9A84C;
-            font-weight: 600;
-        }
-
-        .category-option input[type="radio"]:focus + .category-label {
-            outline: 2px solid #C9A84C;
-            outline-offset: 2px;
-        }
-
         .submit-btn {
             width: 100%;
             padding: 1rem;
@@ -207,11 +138,6 @@
 
         .submit-btn:active {
             transform: translateY(0);
-        }
-
-        .submit-btn:focus {
-            outline: 2px solid #fff;
-            outline-offset: 2px;
         }
 
         .message {
@@ -270,11 +196,6 @@
             transition: color 0.3s ease;
         }
 
-        .signup-footer a:focus {
-            outline: 2px solid #C9A84C;
-            outline-offset: 2px;
-        }
-
         .signup-footer a:hover {
             color: #d4b85f;
         }
@@ -311,18 +232,6 @@
             .signup-header h1 {
                 font-size: 1.5rem;
             }
-
-            .categories-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
         }
     </style>
 </head>
@@ -350,7 +259,6 @@
                     autocomplete="email"
                     required
                     aria-required="true"
-                    aria-describedby="email-error"
                 >
             </div>
 
@@ -365,100 +273,8 @@
                     autocomplete="new-password"
                     required
                     aria-required="true"
-                    aria-describedby="password-error"
                 >
             </div>
-
-            <!-- Business Category -->
-            <fieldset class="form-group">
-                <legend class="categories-label">What's your business?</legend>
-                <div class="categories-grid">
-                    <div class="category-option">
-                        <input 
-                            type="radio" 
-                            id="restaurant" 
-                            name="businessType" 
-                            value="restaurant" 
-                            required
-                            aria-label="Restaurant"
-                        >
-                        <label for="restaurant" class="category-label">
-                            <span class="category-icon" aria-hidden="true">🍽️</span>
-                            <span class="category-name">Restaurant</span>
-                        </label>
-                    </div>
-
-                    <div class="category-option">
-                        <input 
-                            type="radio" 
-                            id="salon" 
-                            name="businessType" 
-                            value="salon"
-                            aria-label="Salon or Spa"
-                        >
-                        <label for="salon" class="category-label">
-                            <span class="category-icon" aria-hidden="true">💇</span>
-                            <span class="category-name">Salon/Spa</span>
-                        </label>
-                    </div>
-
-                    <div class="category-option">
-                        <input 
-                            type="radio" 
-                            id="pharmacy" 
-                            name="businessType" 
-                            value="pharmacy"
-                            aria-label="Pharmacy or Clinic"
-                        >
-                        <label for="pharmacy" class="category-label">
-                            <span class="category-icon" aria-hidden="true">⚕️</span>
-                            <span class="category-name">Pharmacy</span>
-                        </label>
-                    </div>
-
-                    <div class="category-option">
-                        <input 
-                            type="radio" 
-                            id="retail" 
-                            name="businessType" 
-                            value="retail"
-                            aria-label="Retail Shop"
-                        >
-                        <label for="retail" class="category-label">
-                            <span class="category-icon" aria-hidden="true">🏪</span>
-                            <span class="category-name">Retail</span>
-                        </label>
-                    </div>
-
-                    <div class="category-option">
-                        <input 
-                            type="radio" 
-                            id="betting" 
-                            name="businessType" 
-                            value="betting"
-                            aria-label="Betting Shop"
-                        >
-                        <label for="betting" class="category-label">
-                            <span class="category-icon" aria-hidden="true">⚡</span>
-                            <span class="category-name">Betting Shop</span>
-                        </label>
-                    </div>
-
-                    <div class="category-option">
-                        <input 
-                            type="radio" 
-                            id="other" 
-                            name="businessType" 
-                            value="other"
-                            aria-label="Other business type"
-                        >
-                        <label for="other" class="category-label">
-                            <span class="category-icon" aria-hidden="true">🎯</span>
-                            <span class="category-name">Other</span>
-                        </label>
-                    </div>
-                </div>
-            </fieldset>
 
             <!-- Submit -->
             <button type="submit" class="submit-btn">Create Account</button>
@@ -490,10 +306,9 @@
 
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            const businessType = document.querySelector('input[name="businessType"]:checked')?.value;
 
             // Validation
-            if (!email || !password || !businessType) {
+            if (!email || !password) {
                 showMessage('Please fill in all fields', 'error');
                 isSubmitting = false;
                 return;
@@ -557,45 +372,6 @@
 
                 console.log('[BizFlow Signup] Profile created successfully');
 
-                // Step 3: Create business
-                const businessData = {
-                    owner_id: signupResult.user.id,
-                    business_name: 'My Business',
-                    business_category: businessType,
-                    status: 'trial',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                };
-
-                console.log('[BizFlow Signup] Inserting business...');
-                const businessInsert = await supabase.from('businesses')
-                    .insert([businessData], { returning: 'representation' });
-
-                if (!businessInsert.error && businessInsert.data?.[0]) {
-                    const businessId = businessInsert.data[0].id;
-                    console.log('[BizFlow Signup] Business created:', businessId);
-
-                    // Create subscription
-                    const trialEndDate = new Date();
-                    trialEndDate.setDate(trialEndDate.getDate() + 14);
-
-                    await supabase.from('subscriptions')
-                        .insert([{
-                            business_id: businessId,
-                            plan_type: 'starter',
-                            monthly_price: 999,
-                            status: 'trial',
-                            trial_end_date: trialEndDate.toISOString(),
-                            payment_status: 'pending',
-                            billing_cycle_start: new Date().toISOString()
-                        }], { returning: 'minimal' });
-
-                    // Link business to profile
-                    await supabase.from('profiles')
-                        .update({ business_id: businessId })
-                        .eq('id', signupResult.user.id);
-                }
-
                 supabase.setUser({
                     id: signupResult.user.id,
                     email: email,
@@ -603,11 +379,11 @@
                 });
 
                 showMessage('✓ Account created! Redirecting...', 'success');
-                console.log('[BizFlow Signup] Signup complete - redirecting to dashboard');
+                console.log('[BizFlow Signup] Signup complete - redirecting to business selector');
 
-                // TESLA METHOD: Skip all setup pages, go straight to dashboard
+                // Redirect to business selector instead of dashboard
                 setTimeout(() => {
-                    window.location.href = '/bizflow/dashboard/index.html?onboard=true';
+                    window.location.href = '/bizflow/dashboard/select-business-type.html';
                 }, 1500);
 
             } catch (error) {
@@ -624,7 +400,6 @@
             messageDiv.style.display = 'block';
         }
 
-        // Announce to screen readers when page loads
         window.addEventListener('load', () => {
             const h1 = document.querySelector('h1');
             if (h1) {
