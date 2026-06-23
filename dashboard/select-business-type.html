@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Your Business - BizFlow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' fill='%23C9A84C'>B</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #12151c 0%, #1a1f2e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .logo {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .logo .biz {
+            color: #C9A84C;
+        }
+
+        .logo .flow {
+            color: #fff;
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #999;
+            font-size: 1rem;
+        }
+
+        .selector-form {
+            background: rgba(26, 31, 46, 0.8);
+            border: 1px solid rgba(201, 168, 76, 0.2);
+            border-radius: 16px;
+            padding: 2.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        label {
+            display: block;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            letter-spacing: 0.5px;
+        }
+
+        .dropdown-wrapper {
+            position: relative;
+        }
+
+        select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(18, 21, 28, 0.5);
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+            padding-right: 2.5rem;
+        }
+
+        select:hover {
+            border-color: #C9A84C;
+            background: rgba(18, 21, 28, 0.7);
+        }
+
+        select:focus {
+            outline: none;
+            background: rgba(18, 21, 28, 0.8);
+            border-color: #C9A84C;
+            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
+        }
+
+        select option {
+            background: #12151c;
+            color: #fff;
+            padding: 0.5rem;
+        }
+
+        .dropdown-wrapper::after {
+            content: '▼';
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #C9A84C;
+            pointer-events: none;
+            font-size: 0.75rem;
+        }
+
+        .business-preview {
+            display: none;
+            background: rgba(201, 168, 76, 0.1);
+            border: 1px solid rgba(201, 168, 76, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            animation: slideDown 0.3s ease;
+        }
+
+        .business-preview.active {
+            display: block;
+        }
+
+        .preview-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .preview-name {
+            color: #C9A84C;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .preview-desc {
+            color: #999;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #C9A84C 0%, #d4b85f 100%);
+            color: #12151c;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+            font-family: 'DM Sans', sans-serif;
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .submit-btn:not(:disabled) {
+            opacity: 1;
+            cursor: pointer;
+        }
+
+        .submit-btn:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(201, 168, 76, 0.3);
+        }
+
+        .message {
+            display: none;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-align: center;
+            animation: slideDown 0.3s ease;
+        }
+
+        .message.error {
+            background: rgba(220, 38, 38, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(220, 38, 38, 0.3);
+        }
+
+        .message.info {
+            background: rgba(59, 130, 246, 0.15);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #C9A84C;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(201, 168, 76, 0.3);
+            border-top: 2px solid #C9A84C;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .selector-form {
+                padding: 2rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <div class="header">
+            <div class="logo" aria-label="BizFlow">
+                <span class="biz">Biz</span><span class="flow">Flow</span>
+            </div>
+            <h1>Let's Set Up Your Business</h1>
+            <p>Choose your business type to get started</p>
+        </div>
+
+        <form class="selector-form" id="selectorForm" novalidate>
+            <div id="selectorMessage" class="message" role="alert" aria-live="polite"></div>
+
+            <!-- Business Type Dropdown -->
+            <div class="form-group">
+                <label for="businessType">What's your business?</label>
+                <div class="dropdown-wrapper">
+                    <select id="businessType" name="businessType" required aria-required="true">
+                        <option value="">-- Select your business type --</option>
+                        <option value="betting">⚡ Betting Shop</option>
+                        <option value="restaurant">🍽️ Restaurant</option>
+                        <option value="salon">💇 Salon & Spa</option>
+                        <option value="pharmacy">⚕️ Pharmacy</option>
+                        <option value="retail">🏪 Retail Shop</option>
+                        <option value="bookshop">📚 Bookshop</option>
+                        <option value="supermarket">🛒 Supermarket</option>
+                        <option value="hotel">🏨 Hotel</option>
+                        <option value="gym">💪 Gym & Fitness</option>
+                        <option value="clinic">🏥 Clinic</option>
+                        <option value="tailoring">👔 Tailoring Shop</option>
+                        <option value="garage">🔧 Garage</option>
+                        <option value="other">🎯 Other Business</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Business Preview -->
+            <div id="businessPreview" class="business-preview">
+                <div class="preview-icon" id="previewIcon"></div>
+                <div class="preview-name" id="previewName"></div>
+                <div class="preview-desc" id="previewDesc"></div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="submit-btn" id="submitBtn" disabled>Continue to Dashboard</button>
+
+            <div class="loading" id="loadingState" aria-hidden="true">
+                <span class="spinner"></span>Setting up your business...
+            </div>
+        </form>
+    </main>
+
+    <script src="../assets/js/supabase-client.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    <script>
+        const BUSINESS_TYPES = {
+            betting: { name: 'Betting Shop', icon: '⚡', desc: 'Sports betting & gaming' },
+            restaurant: { name: 'Restaurant', icon: '🍽️', desc: 'Cafes, restaurants & bars' },
+            salon: { name: 'Salon & Spa', icon: '💇', desc: 'Hair, beauty & spa services' },
+            pharmacy: { name: 'Pharmacy', icon: '⚕️', desc: 'Pharmacy & medicine shop' },
+            retail: { name: 'Retail Shop', icon: '🏪', desc: 'Retail & groceries' },
+            bookshop: { name: 'Bookshop', icon: '📚', desc: 'Books, stationery & supplies' },
+            supermarket: { name: 'Supermarket', icon: '🛒', desc: 'Supermarket & groceries' },
+            hotel: { name: 'Hotel', icon: '🏨', desc: 'Hotel & accommodation' },
+            gym: { name: 'Gym & Fitness', icon: '💪', desc: 'Fitness center & gym' },
+            clinic: { name: 'Clinic', icon: '🏥', desc: 'Medical & healthcare' },
+            tailoring: { name: 'Tailoring Shop', icon: '👔', desc: 'Tailoring & alterations' },
+            garage: { name: 'Garage', icon: '🔧', desc: 'Car repairs & mechanics' },
+            other: { name: 'Other Business', icon: '🎯', desc: 'Any other business type' }
+        };
+
+        const form = document.getElementById('selectorForm');
+        const selectDropdown = document.getElementById('businessType');
+        const submitBtn = document.getElementById('submitBtn');
+        const preview = document.getElementById('businessPreview');
+        const messageDiv = document.getElementById('selectorMessage');
+        const loadingState = document.getElementById('loadingState');
+        let isSubmitting = false;
+
+        // Check if user is logged in
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = supabase.getUser();
+            if (!user) {
+                window.location.href = '../auth/signin.html';
+            }
+        });
+
+        // Handle dropdown change
+        selectDropdown.addEventListener('change', (e) => {
+            const selected = e.target.value;
+            
+            if (selected && BUSINESS_TYPES[selected]) {
+                const business = BUSINESS_TYPES[selected];
+                document.getElementById('previewIcon').textContent = business.icon;
+                document.getElementById('previewName').textContent = business.name;
+                document.getElementById('previewDesc').textContent = business.desc;
+                preview.classList.add('active');
+                submitBtn.disabled = false;
+            } else {
+                preview.classList.remove('active');
+                submitBtn.disabled = true;
+            }
+        });
+
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (isSubmitting) return;
+            isSubmitting = true;
+
+            const selected = selectDropdown.value;
+
+            if (!selected) {
+                showMessage('Please select a business type', 'error');
+                isSubmitting = false;
+                return;
+            }
+
+            loadingState.style.display = 'block';
+            showMessage('Setting up your business...', 'info');
+
+            try {
+                const user = supabase.getUser();
+                const businessData = BUSINESS_TYPES[selected];
+
+                console.log('[BizFlow] Creating business:', selected);
+
+                // Create business
+                const businessInsert = await supabase.from('businesses')
+                    .insert([{
+                        owner_id: user.id,
+                        business_name: businessData.name,
+                        business_category: selected,
+                        status: 'trial',
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }], { returning: 'representation' });
+
+                if (businessInsert.error) {
+                    console.error('[BizFlow] Business creation failed:', businessInsert.error);
+                    showMessage('Failed to create business: ' + businessInsert.error, 'error');
+                    loadingState.style.display = 'none';
+                    isSubmitting = false;
+                    return;
+                }
+
+                const businessId = businessInsert.data[0].id;
+                console.log('[BizFlow] Business created:', businessId);
+
+                // Create subscription
+                const trialEndDate = new Date();
+                trialEndDate.setDate(trialEndDate.getDate() + 14);
+
+                await supabase.from('subscriptions')
+                    .insert([{
+                        business_id: businessId,
+                        plan_type: 'starter',
+                        monthly_price: 999,
+                        status: 'trial',
+                        trial_end_date: trialEndDate.toISOString(),
+                        payment_status: 'pending',
+                        billing_cycle_start: new Date().toISOString()
+                    }], { returning: 'minimal' });
+
+                // Link business to profile
+                await supabase.from('profiles')
+                    .update({ business_id: businessId })
+                    .eq('id', user.id);
+
+                localStorage.setItem('bizflow_current_business', JSON.stringify({
+                    id: businessId,
+                    name: businessData.name,
+                    category: selected
+                }));
+
+                showMessage('✓ Business created! Redirecting to dashboard...', 'info');
+                console.log('[BizFlow] Business setup complete - redirecting to dashboard');
+
+                setTimeout(() => {
+                    window.location.href = './index.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error('[BizFlow] Exception:', error);
+                showMessage('An error occurred: ' + error.message, 'error');
+                loadingState.style.display = 'none';
+                isSubmitting = false;
+            }
+        });
+
+        function showMessage(message, type) {
+            messageDiv.textContent = message;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
