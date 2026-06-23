@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sign up for BizFlow - Free business management for Kenyan businesses">
     <title>Sign Up - BizFlow</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' fill='%23C9A84C'>B</text></svg>">
     <style>
         * {
             margin: 0;
@@ -14,10 +16,13 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+        }
+
         body {
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #12151c 0%, #1a1f2e 100%);
-            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -29,7 +34,6 @@
             max-width: 500px;
         }
 
-        /* Header */
         .signup-header {
             text-align: center;
             margin-bottom: 3rem;
@@ -64,7 +68,6 @@
             font-weight: 400;
         }
 
-        /* Form */
         .signup-form {
             background: rgba(26, 31, 46, 0.8);
             border: 1px solid rgba(201, 168, 76, 0.2);
@@ -97,6 +100,12 @@
             font-family: 'DM Sans', sans-serif;
             font-size: 1rem;
             transition: all 0.3s ease;
+            autocomplete: off;
+        }
+
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder {
+            color: #666;
         }
 
         input[type="email"]:focus,
@@ -105,11 +114,6 @@
             background: rgba(18, 21, 28, 0.8);
             border-color: #C9A84C;
             box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
-        }
-
-        /* Business Category Selection */
-        .form-group.categories {
-            margin-bottom: 2rem;
         }
 
         .categories-label {
@@ -131,8 +135,11 @@
             position: relative;
         }
 
-        .category-option input {
-            display: none;
+        .category-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
         .category-label {
@@ -147,6 +154,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: center;
+            user-select: none;
         }
 
         .category-icon {
@@ -161,18 +169,22 @@
             line-height: 1.2;
         }
 
-        .category-option input:checked + .category-label {
+        .category-option input[type="radio"]:checked + .category-label {
             background: linear-gradient(135deg, rgba(201, 168, 76, 0.15) 0%, rgba(201, 168, 76, 0.05) 100%);
             border-color: #C9A84C;
             box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
         }
 
-        .category-option input:checked + .category-label .category-name {
+        .category-option input[type="radio"]:checked + .category-label .category-name {
             color: #C9A84C;
             font-weight: 600;
         }
 
-        /* Submit Button */
+        .category-option input[type="radio"]:focus + .category-label {
+            outline: 2px solid #C9A84C;
+            outline-offset: 2px;
+        }
+
         .submit-btn {
             width: 100%;
             padding: 1rem;
@@ -185,6 +197,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             letter-spacing: 0.5px;
+            font-family: 'DM Sans', sans-serif;
         }
 
         .submit-btn:hover {
@@ -196,7 +209,11 @@
             transform: translateY(0);
         }
 
-        /* Message */
+        .submit-btn:focus {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
         .message {
             display: none;
             padding: 1rem;
@@ -204,6 +221,18 @@
             border-radius: 8px;
             font-size: 0.9rem;
             text-align: center;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .message.error {
@@ -224,7 +253,6 @@
             border: 1px solid rgba(59, 130, 246, 0.3);
         }
 
-        /* Footer */
         .signup-footer {
             text-align: center;
             margin-top: 2rem;
@@ -242,11 +270,15 @@
             transition: color 0.3s ease;
         }
 
+        .signup-footer a:focus {
+            outline: 2px solid #C9A84C;
+            outline-offset: 2px;
+        }
+
         .signup-footer a:hover {
             color: #d4b85f;
         }
 
-        /* Loading */
         .loading {
             display: none;
             text-align: center;
@@ -271,7 +303,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Responsive */
         @media (max-width: 480px) {
             .signup-form {
                 padding: 2rem;
@@ -285,29 +316,41 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="signup-container">
+    <main class="signup-container">
         <div class="signup-header">
-            <div class="logo">
+            <div class="logo" aria-label="BizFlow">
                 <span class="biz">Biz</span><span class="flow">Flow</span>
             </div>
             <h1>Start Free</h1>
             <p>14 days. No credit card needed.</p>
         </div>
 
-        <form class="signup-form" id="signupForm">
-            <div id="signupMessage" class="message"></div>
+        <form class="signup-form" id="signupForm" novalidate>
+            <div id="signupMessage" class="message" role="alert" aria-live="polite"></div>
 
             <!-- Email -->
             <div class="form-group">
-                <label for="email">Email</label>
+                <label for="email">Email Address</label>
                 <input 
                     type="email" 
                     id="email" 
-                    placeholder="your@email.com" 
+                    name="email"
+                    placeholder="your@email.com"
+                    autocomplete="email"
                     required
+                    aria-required="true"
+                    aria-describedby="email-error"
                 >
             </div>
 
@@ -317,69 +360,110 @@
                 <input 
                     type="password" 
                     id="password" 
+                    name="password"
                     placeholder="At least 8 characters" 
+                    autocomplete="new-password"
                     required
+                    aria-required="true"
+                    aria-describedby="password-error"
                 >
             </div>
 
             <!-- Business Category -->
-            <div class="form-group categories">
-                <label class="categories-label">What's your business?</label>
+            <fieldset class="form-group">
+                <legend class="categories-label">What's your business?</legend>
                 <div class="categories-grid">
                     <div class="category-option">
-                        <input type="radio" id="restaurant" name="businessType" value="restaurant" required>
+                        <input 
+                            type="radio" 
+                            id="restaurant" 
+                            name="businessType" 
+                            value="restaurant" 
+                            required
+                            aria-label="Restaurant"
+                        >
                         <label for="restaurant" class="category-label">
-                            <div class="category-icon">🍽️</div>
-                            <div class="category-name">Restaurant</div>
+                            <span class="category-icon" aria-hidden="true">🍽️</span>
+                            <span class="category-name">Restaurant</span>
                         </label>
                     </div>
 
                     <div class="category-option">
-                        <input type="radio" id="salon" name="businessType" value="salon">
+                        <input 
+                            type="radio" 
+                            id="salon" 
+                            name="businessType" 
+                            value="salon"
+                            aria-label="Salon or Spa"
+                        >
                         <label for="salon" class="category-label">
-                            <div class="category-icon">💇</div>
-                            <div class="category-name">Salon/Spa</div>
+                            <span class="category-icon" aria-hidden="true">💇</span>
+                            <span class="category-name">Salon/Spa</span>
                         </label>
                     </div>
 
                     <div class="category-option">
-                        <input type="radio" id="pharmacy" name="businessType" value="pharmacy">
+                        <input 
+                            type="radio" 
+                            id="pharmacy" 
+                            name="businessType" 
+                            value="pharmacy"
+                            aria-label="Pharmacy or Clinic"
+                        >
                         <label for="pharmacy" class="category-label">
-                            <div class="category-icon">⚕️</div>
-                            <div class="category-name">Pharmacy</div>
+                            <span class="category-icon" aria-hidden="true">⚕️</span>
+                            <span class="category-name">Pharmacy</span>
                         </label>
                     </div>
 
                     <div class="category-option">
-                        <input type="radio" id="retail" name="businessType" value="retail">
+                        <input 
+                            type="radio" 
+                            id="retail" 
+                            name="businessType" 
+                            value="retail"
+                            aria-label="Retail Shop"
+                        >
                         <label for="retail" class="category-label">
-                            <div class="category-icon">🏪</div>
-                            <div class="category-name">Retail</div>
+                            <span class="category-icon" aria-hidden="true">🏪</span>
+                            <span class="category-name">Retail</span>
                         </label>
                     </div>
 
                     <div class="category-option">
-                        <input type="radio" id="betting" name="businessType" value="betting">
+                        <input 
+                            type="radio" 
+                            id="betting" 
+                            name="businessType" 
+                            value="betting"
+                            aria-label="Betting Shop"
+                        >
                         <label for="betting" class="category-label">
-                            <div class="category-icon">⚡</div>
-                            <div class="category-name">Betting Shop</div>
+                            <span class="category-icon" aria-hidden="true">⚡</span>
+                            <span class="category-name">Betting Shop</span>
                         </label>
                     </div>
 
                     <div class="category-option">
-                        <input type="radio" id="other" name="businessType" value="other">
+                        <input 
+                            type="radio" 
+                            id="other" 
+                            name="businessType" 
+                            value="other"
+                            aria-label="Other business type"
+                        >
                         <label for="other" class="category-label">
-                            <div class="category-icon">🎯</div>
-                            <div class="category-name">Other</div>
+                            <span class="category-icon" aria-hidden="true">🎯</span>
+                            <span class="category-name">Other</span>
                         </label>
                     </div>
                 </div>
-            </div>
+            </fieldset>
 
             <!-- Submit -->
             <button type="submit" class="submit-btn">Create Account</button>
 
-            <div class="loading" id="loadingState">
+            <div class="loading" id="loadingState" aria-hidden="true">
                 <span class="spinner"></span>Setting up your account...
             </div>
         </form>
@@ -387,23 +471,26 @@
         <div class="signup-footer">
             <p>Already have an account? <a href="./signin.html">Sign in</a></p>
         </div>
-    </div>
+    </main>
 
     <script src="../assets/js/supabase-client.js"></script>
     <script src="../assets/js/utils.js"></script>
     <script>
         const form = document.getElementById('signupForm');
         const loadingState = document.getElementById('loadingState');
+        const messageDiv = document.getElementById('signupMessage');
         let isSubmitting = false;
 
-        form.addEventListener('submit', async (e) => {
+        form.addEventListener('submit', handleSignup);
+
+        async function handleSignup(e) {
             e.preventDefault();
             if (isSubmitting) return;
             isSubmitting = true;
 
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            const businessType = document.querySelector('input[name="businessType"]:checked').value;
+            const businessType = document.querySelector('input[name="businessType"]:checked')?.value;
 
             // Validation
             if (!email || !password || !businessType) {
@@ -419,7 +506,7 @@
             }
 
             if (!validateEmail(email)) {
-                showMessage('Please enter a valid email', 'error');
+                showMessage('Please enter a valid email address', 'error');
                 isSubmitting = false;
                 return;
             }
@@ -428,26 +515,26 @@
             showMessage('Creating your account...', 'info');
 
             try {
-                // STEP 1: Sign up user in Supabase Auth
-                console.log('Step 1: Signing up user with email:', email);
+                console.log('[BizFlow Signup] Starting signup for:', email);
+                
+                // Step 1: Sign up in Supabase Auth
                 const signupResult = await supabase.signUp(email, password);
 
                 if (!signupResult.success) {
-                    console.error('Signup failed:', signupResult.error);
-                    showMessage('Signup failed: ' + signupResult.error, 'error');
+                    console.error('[BizFlow Signup] Auth signup failed:', signupResult.error);
+                    showMessage('Signup failed: ' + (signupResult.error || 'Unknown error'), 'error');
                     loadingState.style.display = 'none';
                     isSubmitting = false;
                     return;
                 }
 
-                console.log('Signup successful. User ID:', signupResult.user.id);
+                console.log('[BizFlow Signup] Auth signup successful, User ID:', signupResult.user.id);
 
-                // STEP 2: Create profile record
-                console.log('Step 2: Creating profile...');
+                // Step 2: Create profile
                 const profileData = {
                     id: signupResult.user.id,
                     email: email,
-                    full_name: 'Customer', // Default name
+                    full_name: 'Customer',
                     role: 'business_owner',
                     plan_type: 'starter',
                     is_active: true,
@@ -456,23 +543,21 @@
                     last_active: new Date().toISOString()
                 };
 
-                console.log('Profile data to insert:', profileData);
-
+                console.log('[BizFlow Signup] Inserting profile...');
                 const profileInsert = await supabase.from('profiles')
                     .insert([profileData], { returning: 'minimal' });
 
                 if (profileInsert.error) {
-                    console.error('Profile creation error:', profileInsert.error);
-                    showMessage('Profile creation failed: ' + profileInsert.error, 'error');
+                    console.error('[BizFlow Signup] Profile insert failed:', profileInsert.error);
+                    showMessage('Account created but profile setup failed: ' + profileInsert.error, 'error');
                     loadingState.style.display = 'none';
                     isSubmitting = false;
                     return;
                 }
 
-                console.log('Profile created successfully');
+                console.log('[BizFlow Signup] Profile created successfully');
 
-                // STEP 3: Create default business
-                console.log('Step 3: Creating business...');
+                // Step 3: Create business
                 const businessData = {
                     owner_id: signupResult.user.id,
                     business_name: 'My Business',
@@ -482,25 +567,20 @@
                     updated_at: new Date().toISOString()
                 };
 
-                console.log('Business data to insert:', businessData);
-
+                console.log('[BizFlow Signup] Inserting business...');
                 const businessInsert = await supabase.from('businesses')
                     .insert([businessData], { returning: 'representation' });
 
-                if (businessInsert.error) {
-                    console.error('Business creation error:', businessInsert.error);
-                    console.log('Warning: business creation failed, but profile was created');
-                } else {
-                    console.log('Business created successfully');
-                    const businessId = businessInsert.data?.[0]?.id;
+                if (!businessInsert.error && businessInsert.data?.[0]) {
+                    const businessId = businessInsert.data[0].id;
+                    console.log('[BizFlow Signup] Business created:', businessId);
 
-                    if (businessId) {
-                        // STEP 4: Create subscription
-                        console.log('Step 4: Creating subscription...');
-                        const trialEndDate = new Date();
-                        trialEndDate.setDate(trialEndDate.getDate() + 14);
+                    // Create subscription
+                    const trialEndDate = new Date();
+                    trialEndDate.setDate(trialEndDate.getDate() + 14);
 
-                        const subscriptionData = {
+                    await supabase.from('subscriptions')
+                        .insert([{
                             business_id: businessId,
                             plan_type: 'starter',
                             monthly_price: 999,
@@ -508,34 +588,14 @@
                             trial_end_date: trialEndDate.toISOString(),
                             payment_status: 'pending',
                             billing_cycle_start: new Date().toISOString()
-                        };
+                        }], { returning: 'minimal' });
 
-                        console.log('Subscription data to insert:', subscriptionData);
-
-                        const subscriptionInsert = await supabase.from('subscriptions')
-                            .insert([subscriptionData], { returning: 'minimal' });
-
-                        if (subscriptionInsert.error) {
-                            console.error('Subscription creation error:', subscriptionInsert.error);
-                        } else {
-                            console.log('Subscription created successfully');
-                        }
-
-                        // STEP 5: Update profile with business_id
-                        console.log('Step 5: Updating profile with business_id...');
-                        const updateResult = await supabase.from('profiles')
-                            .update({ business_id: businessId })
-                            .eq('id', signupResult.user.id);
-
-                        if (updateResult.error) {
-                            console.error('Profile update error:', updateResult.error);
-                        } else {
-                            console.log('Profile updated with business_id');
-                        }
-                    }
+                    // Link business to profile
+                    await supabase.from('profiles')
+                        .update({ business_id: businessId })
+                        .eq('id', signupResult.user.id);
                 }
 
-                // STEP 6: Success - redirect
                 supabase.setUser({
                     id: signupResult.user.id,
                     email: email,
@@ -543,26 +603,33 @@
                 });
 
                 showMessage('✓ Account created! Redirecting...', 'success');
-                console.log('Signup complete - redirecting to dashboard');
+                console.log('[BizFlow Signup] Signup complete - redirecting');
 
                 setTimeout(() => {
                     window.location.href = '/bizflow/dashboard/select-business.html?onboard=true';
                 }, 1500);
 
             } catch (error) {
-                console.error('Signup exception:', error);
+                console.error('[BizFlow Signup] Exception:', error);
                 showMessage('An error occurred: ' + error.message, 'error');
                 loadingState.style.display = 'none';
                 isSubmitting = false;
             }
-        });
+        }
 
         function showMessage(message, type) {
-            const msgDiv = document.getElementById('signupMessage');
-            msgDiv.textContent = message;
-            msgDiv.className = `message ${type}`;
-            msgDiv.style.display = 'block';
+            messageDiv.textContent = message;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
         }
+
+        // Announce to screen readers when page loads
+        window.addEventListener('load', () => {
+            const h1 = document.querySelector('h1');
+            if (h1) {
+                h1.focus();
+            }
+        });
     </script>
 </body>
 </html>
