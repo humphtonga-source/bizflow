@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - BizFlow</title>
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <style>
+        /* Onboarding Modal */
+        .onboarding-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .onboarding-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .onboarding-modal {
+            background: linear-gradient(135deg, #12151c 0%, #1a1f2e 100%);
+            border: 1px solid rgba(201, 168, 76, 0.2);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .onboarding-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .onboarding-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .onboarding-header h2 {
+            color: #fff;
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .onboarding-header p {
+            color: #999;
+            font-size: 1rem;
+        }
+
+        .onboarding-checklist {
+            background: rgba(18, 21, 28, 0.5);
+            border: 1px solid rgba(201, 168, 76, 0.15);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: #ccc;
+            font-size: 0.95rem;
+        }
+
+        .checklist-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .checklist-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(201, 168, 76, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            flex-shrink: 0;
+            font-size: 0.8rem;
+            color: #C9A84C;
+        }
+
+        .checklist-item.pending .checklist-check {
+            background: rgba(201, 168, 76, 0.1);
+            color: #666;
+        }
+
+        .onboarding-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn-primary, .btn-secondary {
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'DM Sans', sans-serif;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #C9A84C 0%, #d4b85f 100%);
+            color: #12151c;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(201, 168, 76, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(18, 21, 28, 0.5);
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            color: #C9A84C;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(18, 21, 28, 0.8);
+            border-color: #C9A84C;
+        }
+
+        /* Dashboard Content */
+        .dashboard-welcome {
+            display: none;
+        }
+
+        .dashboard-welcome.active {
+            display: block;
+        }
+
+        .welcome-banner {
+            background: linear-gradient(135deg, rgba(201, 168, 76, 0.1) 0%, rgba(201, 168, 76, 0.05) 100%);
+            border: 1px solid rgba(201, 168, 76, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .welcome-banner h1 {
+            color: #fff;
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-banner p {
+            color: #999;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body class="dashboard-page">
+    <nav class="dashboard-nav">
+        <div class="container">
+            <div class="nav-brand">BizFlow</div>
+            <div class="nav-user">
+                <span id="userEmail"></span>
+                <button id="logoutBtn" class="btn btn-outline btn-sm">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="dashboard-main">
+        <div class="container">
+            <!-- Onboarding Modal -->
+            <div class="onboarding-overlay" id="onboardingOverlay">
+                <div class="onboarding-modal">
+                    <div class="onboarding-header">
+                        <div class="onboarding-icon" id="businessIcon">🎯</div>
+                        <h2>Welcome to BizFlow!</h2>
+                        <p>Your business management dashboard is ready</p>
+                    </div>
+
+                    <div class="onboarding-checklist">
+                        <div class="checklist-item">
+                            <div class="checklist-check">✓</div>
+                            <div>Account created</div>
+                        </div>
+                        <div class="checklist-item">
+                            <div class="checklist-check">✓</div>
+                            <div>Business profile ready</div>
+                        </div>
+                        <div class="checklist-item pending">
+                            <div class="checklist-check">→</div>
+                            <div>Complete your profile (optional)</div>
+                        </div>
+                    </div>
+
+                    <div class="onboarding-buttons">
+                        <button id="skipOnboarding" class="btn-secondary">Start Using BizFlow</button>
+                        <button id="completeProfile" class="btn-primary">Complete Profile</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Welcome Section -->
+            <section class="dashboard-welcome active">
+                <div class="welcome-banner">
+                    <h1>Welcome to BizFlow! 🎉</h1>
+                    <p>Your business dashboard is ready to use. Complete your profile anytime from Settings.</p>
+                </div>
+
+                <section class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Getting Started</h2>
+                    </div>
+
+                    <div id="dashboardContent">
+                        <!-- Dashboard content will be loaded here based on business category -->
+                    </div>
+                </section>
+            </section>
+        </div>
+    </main>
+
+    <script src="../assets/js/supabase-client.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const user = supabase.getUser();
+                
+                if (!user) {
+                    window.location.href = '../auth/signin.html';
+                    return;
+                }
+
+                document.getElementById('userEmail').textContent = user.email;
+
+                // Check if this is a new user (onboard parameter)
+                const urlParams = new URLSearchParams(window.location.search);
+                const isOnboarding = urlParams.get('onboard') === 'true';
+
+                // Show onboarding modal if new user
+                if (isOnboarding) {
+                    showOnboardingModal();
+                } else {
+                    // Hide onboarding, show dashboard
+                    document.getElementById('onboardingOverlay').classList.remove('active');
+                }
+
+                // Load dashboard content
+                loadDashboardContent(user.id);
+
+                // Setup buttons
+                document.getElementById('skipOnboarding').addEventListener('click', skipOnboarding);
+                document.getElementById('completeProfile').addEventListener('click', completeProfile);
+                document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+            } catch (error) {
+                console.error('Dashboard error:', error);
+            }
+        });
+
+        function showOnboardingModal() {
+            document.getElementById('onboardingOverlay').classList.add('active');
+        }
+
+        function skipOnboarding() {
+            document.getElementById('onboardingOverlay').classList.remove('active');
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        function completeProfile() {
+            // Redirect to profile setup page (create this later)
+            window.location.href = './profile-setup.html';
+        }
+
+        async function loadDashboardContent(userId) {
+            try {
+                // Fetch user's business
+                const profileResult = await supabase.from('profiles')
+                    .select('business_id')
+                    .eq('id', userId)
+                    .single();
+
+                if (!profileResult.error && profileResult.data?.business_id) {
+                    const businessId = profileResult.data.business_id;
+                    
+                    // Fetch business details
+                    const businessResult = await supabase.from('businesses')
+                        .select('*')
+                        .eq('id', businessId)
+                        .single();
+
+                    if (!businessResult.error && businessResult.data) {
+                        const business = businessResult.data;
+                        localStorage.setItem('bizflow_current_business', JSON.stringify(business));
+                        
+                        // Update welcome banner with business name
+                        document.querySelector('.welcome-banner h1').textContent = `Welcome to ${business.business_name}! 🎉`;
+                        
+                        // Load appropriate module based on business category
+                        loadModuleByCategory(business.business_category);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading dashboard content:', error);
+            }
+        }
+
+        function loadModuleByCategory(category) {
+            const dashboardContent = document.getElementById('dashboardContent');
+            const modules = {
+                betting: '💰 Betting Shop',
+                restaurant: '🍽️ Restaurant',
+                salon: '💇 Salon',
+                pharmacy: '⚕️ Pharmacy',
+                retail: '🏪 Retail',
+                other: '🎯 Business'
+            };
+
+            dashboardContent.innerHTML = `
+                <div style="background: rgba(201, 168, 76, 0.1); border: 1px solid rgba(201, 168, 76, 0.2); border-radius: 12px; padding: 2rem; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">
+                        ${category === 'betting' ? '⚡' : 
+                          category === 'restaurant' ? '🍽️' : 
+                          category === 'salon' ? '💇' : 
+                          category === 'pharmacy' ? '⚕️' : 
+                          category === 'retail' ? '🏪' : '🎯'}
+                    </div>
+                    <h3 style="color: #fff; margin-bottom: 0.5rem;">${modules[category] || 'Business Dashboard'}</h3>
+                    <p style="color: #999;">Your ${modules[category] || 'dashboard'} module is being loaded...</p>
+                </div>
+            `;
+        }
+
+        function handleLogout() {
+            supabase.signOut();
+            localStorage.removeItem('bizflow_current_business');
+            window.location.href = '../index.html';
+        }
+    </script>
+</body>
+</html>
