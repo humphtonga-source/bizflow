@@ -1,0 +1,378 @@
+<!-- Add this to select-business.html after the body opens, or integrate into main dashboard -->
+
+<div id="onboardingModal" class="onboarding-modal hidden">
+    <div class="onboarding-overlay"></div>
+    <div class="onboarding-content">
+        <!-- Progress Indicator -->
+        <div class="onboarding-progress">
+            <div class="progress-step active" data-step="1">
+                <div class="step-circle">1</div>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="2">
+                <div class="step-circle">2</div>
+            </div>
+        </div>
+
+        <!-- Step 1: Welcome -->
+        <div class="onboarding-step active" data-step="1">
+            <div class="onboarding-icon">🎉</div>
+            <h2>Welcome to BizFlow!</h2>
+            <p>Your 14-day free trial starts now. Let's set up your business in 30 seconds.</p>
+            
+            <div class="trial-info">
+                <div class="trial-badge">
+                    <span class="trial-icon">⏰</span>
+                    <span class="trial-text"><strong>14 days free</strong> · No credit card needed</span>
+                </div>
+            </div>
+
+            <button class="onboarding-btn primary" onclick="nextStep()">Continue</button>
+            <button class="onboarding-btn secondary" onclick="skipOnboarding()">Skip for now</button>
+        </div>
+
+        <!-- Step 2: Profile Completion -->
+        <div class="onboarding-step" data-step="2">
+            <div class="onboarding-icon">📋</div>
+            <h2>Complete Your Profile</h2>
+            <p>Just a few details so we can personalize your experience.</p>
+
+            <form class="onboarding-form" id="profileForm">
+                <div class="form-field">
+                    <label>Business Name</label>
+                    <input type="text" id="businessName" placeholder="e.g., John's Restaurant" required>
+                </div>
+
+                <div class="form-field">
+                    <label>Phone Number</label>
+                    <input type="tel" id="businessPhone" placeholder="+254 712 345 678" required>
+                </div>
+
+                <div class="form-field">
+                    <label>County</label>
+                    <select id="businessCounty" required>
+                        <option value="">Select your county...</option>
+                        <option value="Nairobi">Nairobi</option>
+                        <option value="Mombasa">Mombasa</option>
+                        <option value="Kisumu">Kisumu</option>
+                        <option value="Nakuru">Nakuru</option>
+                        <option value="Naivasha">Naivasha</option>
+                        <option value="Eldoret">Eldoret</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <button type="button" class="onboarding-btn primary" onclick="completeProfile()">Go to Dashboard →</button>
+                <button type="button" class="onboarding-btn secondary" onclick="skipOnboarding()">Skip for now</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .onboarding-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .onboarding-modal.hidden {
+        display: none;
+    }
+
+    .onboarding-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+    }
+
+    .onboarding-content {
+        position: relative;
+        z-index: 1001;
+        background: linear-gradient(135deg, #1a1f2e 0%, #12151c 100%);
+        border: 1px solid rgba(201, 168, 76, 0.2);
+        border-radius: 20px;
+        padding: 3rem;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Progress Indicator */
+    .onboarding-progress {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 3rem;
+        gap: 1rem;
+    }
+
+    .progress-step {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(201, 168, 76, 0.1);
+        border: 2px solid rgba(201, 168, 76, 0.3);
+        color: #999;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .progress-step.active .step-circle {
+        background: linear-gradient(135deg, #C9A84C 0%, #d4b85f 100%);
+        color: #12151c;
+        box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.2);
+    }
+
+    .progress-line {
+        width: 40px;
+        height: 2px;
+        background: rgba(201, 168, 76, 0.2);
+    }
+
+    /* Steps */
+    .onboarding-step {
+        display: none;
+        text-align: center;
+        animation: fadeIn 0.4s ease;
+    }
+
+    .onboarding-step.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .onboarding-icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .onboarding-step h2 {
+        color: #fff;
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .onboarding-step p {
+        color: #999;
+        font-size: 1rem;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    /* Trial Info */
+    .trial-info {
+        margin-bottom: 2rem;
+    }
+
+    .trial-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: linear-gradient(135deg, rgba(201, 168, 76, 0.15) 0%, rgba(201, 168, 76, 0.05) 100%);
+        border: 1px solid rgba(201, 168, 76, 0.3);
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        color: #C9A84C;
+    }
+
+    .trial-icon {
+        font-size: 1.25rem;
+    }
+
+    .trial-text {
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+
+    /* Form */
+    .onboarding-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        text-align: left;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-field {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-field label {
+        color: #fff;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-field input,
+    .form-field select {
+        padding: 0.875rem 1rem;
+        background: rgba(18, 21, 28, 0.5);
+        border: 1px solid rgba(201, 168, 76, 0.2);
+        border-radius: 8px;
+        color: #fff;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-field input:focus,
+    .form-field select:focus {
+        outline: none;
+        background: rgba(18, 21, 28, 0.8);
+        border-color: #C9A84C;
+        box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
+    }
+
+    .form-field select option {
+        background: #12151c;
+        color: #fff;
+    }
+
+    /* Buttons */
+    .onboarding-btn {
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        font-family: 'DM Sans', sans-serif;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-bottom: 0.75rem;
+    }
+
+    .onboarding-btn.primary {
+        background: linear-gradient(135deg, #C9A84C 0%, #d4b85f 100%);
+        color: #12151c;
+    }
+
+    .onboarding-btn.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(201, 168, 76, 0.3);
+    }
+
+    .onboarding-btn.secondary {
+        background: transparent;
+        color: #999;
+        border: 1px solid rgba(201, 168, 76, 0.2);
+    }
+
+    .onboarding-btn.secondary:hover {
+        color: #C9A84C;
+        border-color: #C9A84C;
+        background: rgba(201, 168, 76, 0.05);
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+        .onboarding-content {
+            padding: 2rem;
+        }
+
+        .onboarding-step h2 {
+            font-size: 1.5rem;
+        }
+
+        .onboarding-icon {
+            font-size: 3rem;
+        }
+    }
+</style>
+
+<script>
+    function nextStep() {
+        const current = document.querySelector('.onboarding-step.active');
+        const currentStep = parseInt(current.dataset.step);
+        
+        document.querySelector(`[data-step="${currentStep}"]`).classList.remove('active');
+        document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('active');
+        
+        const nextStepNum = currentStep + 1;
+        document.querySelector(`[data-step="${nextStepNum}"]`).classList.add('active');
+        document.querySelector(`.progress-step[data-step="${nextStepNum}"]`).classList.add('active');
+    }
+
+    async function completeProfile() {
+        const businessName = document.getElementById('businessName').value.trim();
+        const businessPhone = document.getElementById('businessPhone').value.trim();
+        const businessCounty = document.getElementById('businessCounty').value;
+
+        if (!businessName || !businessPhone || !businessCounty) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        // Here you would update the business record in Supabase
+        // For now, just close the modal
+        closeOnboarding();
+    }
+
+    function skipOnboarding() {
+        closeOnboarding();
+    }
+
+    function closeOnboarding() {
+        document.getElementById('onboardingModal').classList.add('hidden');
+        localStorage.setItem('onboardingComplete', 'true');
+    }
+
+    // Check if should show onboarding
+    function checkShowOnboarding() {
+        const params = new URLSearchParams(window.location.search);
+        const onboard = params.get('onboard');
+        const complete = localStorage.getItem('onboardingComplete');
+        
+        if (onboard === 'true' && !complete) {
+            document.getElementById('onboardingModal').classList.remove('hidden');
+        }
+    }
+
+    // Call on page load
+    document.addEventListener('DOMContentLoaded', checkShowOnboarding);
+</script>
