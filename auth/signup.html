@@ -603,10 +603,11 @@
                 });
 
                 showMessage('✓ Account created! Redirecting...', 'success');
-                console.log('[BizFlow Signup] Signup complete - redirecting');
+                console.log('[BizFlow Signup] Signup complete - redirecting to dashboard');
 
+                // TESLA METHOD: Skip all setup pages, go straight to dashboard
                 setTimeout(() => {
-                    window.location.href = '/bizflow/dashboard/select-business.html?onboard=true';
+                    window.location.href = '/bizflow/dashboard/index.html?onboard=true';
                 }, 1500);
 
             } catch (error) {
